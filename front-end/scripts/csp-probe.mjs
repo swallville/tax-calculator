@@ -6,21 +6,21 @@ const page = await context.newPage();
 const allRequests = [];
 const allMessages = [];
 
-page.on('console', (msg) => {
+page.on('console', msg => {
   allMessages.push(`[console.${msg.type()}] ${msg.text()}`);
 });
-page.on('pageerror', (err) => {
+page.on('pageerror', err => {
   allMessages.push(`[pageerror] ${err.message}`);
 });
-page.on('requestfailed', (req) => {
+page.on('requestfailed', req => {
   allMessages.push(
     `[requestfailed] ${req.url()} — ${req.failure()?.errorText}`,
   );
 });
-page.on('request', (req) => {
+page.on('request', req => {
   allRequests.push(`${req.method()} ${req.url()}`);
 });
-page.on('response', async (res) => {
+page.on('response', async res => {
   const url = res.url();
   if (url.includes('.woff') || url.includes('font')) {
     const headers = res.headers();
@@ -37,14 +37,14 @@ console.log('=== console + errors ===');
 if (allMessages.length === 0) {
   console.log('(none)');
 } else {
-  allMessages.forEach((m) => console.log(m));
+  allMessages.forEach(m => console.log(m));
 }
 
 console.log('\n=== font-related requests ===');
 const fontReqs = allRequests.filter(
-  (r) => r.includes('font') || r.includes('woff'),
+  r => r.includes('font') || r.includes('woff'),
 );
 if (fontReqs.length === 0) console.log('(none)');
-else fontReqs.forEach((r) => console.log(r));
+else fontReqs.forEach(r => console.log(r));
 
 await browser.close();

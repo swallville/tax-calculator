@@ -1,46 +1,46 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   /* Background */
-  --bg-page: #1A1226;
-  --bg-card-form: #241C32;
-  --bg-card-results: #241C32;
-  --bg-input: #31264A;
-  --bg-dropdown: #2A2139;
-  --bg-highlight-row: #332A48;
-  --bg-sub-row: #2D243F;
-  --bg-total-row: #3E3258;
-  --bg-skeleton: #2D243F;
-  --bg-error: #2E1C24;
-  --bg-row-hover: #3B3155;
+  --bg-page: #1a1226;
+  --bg-card-form: #241c32;
+  --bg-card-results: #241c32;
+  --bg-input: #31264a;
+  --bg-dropdown: #2a2139;
+  --bg-highlight-row: #332a48;
+  --bg-sub-row: #2d243f;
+  --bg-total-row: #3e3258;
+  --bg-skeleton: #2d243f;
+  --bg-error: #2e1c24;
+  --bg-row-hover: #3b3155;
 
   /* Text */
-  --text-primary: #F5F0FA;
-  --text-secondary: #B8AEC8;
-  --text-muted: #8A7FA0;
-  --text-accent: #4ECAA0;
+  --text-primary: #f5f0fa;
+  --text-secondary: #b8aec8;
+  --text-muted: #8a7fa0;
+  --text-accent: #4ecaa0;
 
   /* Borders */
-  --border-input: #3E3458;
-  --border-subtle: #3A3050;
-  --border-card: #3D3350;
+  --border-input: #3e3458;
+  --border-subtle: #3a3050;
+  --border-card: #3d3350;
 
   /* Interactive */
-  --btn-primary: #7C6AE8;
-  --btn-primary-hover: #6B58D6;
-  --btn-primary-active: #5E4DC4;
-  --btn-disabled: #4A3F63;
-  --ring-focus: #7C6AE8;
+  --btn-primary: #7c6ae8;
+  --btn-primary-hover: #6b58d6;
+  --btn-primary-active: #5e4dc4;
+  --btn-disabled: #4a3f63;
+  --ring-focus: #7c6ae8;
 
   /* Status */
-  --status-error: #E85C5C;
-  --status-error-bg: #2E1C24;
-  --status-success: #4ECAA0;
-  --status-info: #60A5FA;
+  --status-error: #e85c5c;
+  --status-error-bg: #2e1c24;
+  --status-success: #4ecaa0;
+  --status-info: #60a5fa;
 
   /* Effective Rate Pill */
   --pill-bg: rgba(78, 202, 160, 0.1);
-  --pill-text: #4ECAA0;
+  --pill-text: #4ecaa0;
 }
 
 /*
@@ -133,7 +133,8 @@
  * still perceive the loading state without full disappearance.
  */
 @keyframes pulse-soft {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -150,7 +151,9 @@
  * pass rather than cutting them off mid-frame.
  */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
