@@ -1,0 +1,1 @@
+export { createPersistedStore } from './store';
