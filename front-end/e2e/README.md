@@ -4,7 +4,7 @@ Playwright end-to-end tests for the Tax Calculator frontend. Tests run against
 the full docker compose stack — real Next.js app talking to a real Flask backend
 — so every test exercises the actual integration path.
 
-See also: [front-end/README.md](../README.md)
+See also: [root README](../../README.md)
 
 ---
 

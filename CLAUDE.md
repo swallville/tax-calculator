@@ -94,7 +94,7 @@ Follow `.claude/WORKFLOW.md` for the 7-step cycle: Implement → Test → Qualit
 - Linked READMEs in every `src/` directory
 
 ## Visual Reference (additional context)
-Screenshots and a demo video of the running application live in `docs/media/`. They are embedded at the top of `front-end/README.md` and can be regenerated with `node front-end/scripts/capture-media.mjs` while the Docker stack is up on port 3000.
+Screenshots and a demo video of the running application live in `docs/media/`. They are embedded at the top of the root `README.md` and can be regenerated with `node front-end/scripts/capture-media.mjs` while the Docker stack is up on port 3000.
 
 ### Screenshots
 - `docs/media/01-initial.png` — empty state on load: form card on the left (`$` placeholder, year `2022`, Calculate button), empty-state illustration with "Enter your salary" copy on the right
