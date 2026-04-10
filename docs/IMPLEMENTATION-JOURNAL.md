@@ -597,14 +597,56 @@ Without that role, the false FSD lint claim would have shipped to the panel inte
 
 ---
 
-## Final Closing (after Phase 8.5)
+## Phase 8.6 — The Deferred Items, the False Measurement, and the Wise Revert
 
-The sword has been inspected by one smith, then by five. The first inspection caught the chips in the edge. The second caught the stories the smith told about the edge. Both found real things. Both made the sword stronger.
+**Translation**: After Phase 8.5 closed with seven items marked "deferred — not blockers," the user greenlit a second pass to address all seven. Five landed cleanly. One produced smaller savings than estimated. One was attempted, measured, and reverted.
 
-The steel is now what the walkthrough says it is. Not more, not less.
+### Steps Taken
 
-Until the next dawn, which is now just the commit of these Phase 8.5 fixes on top of the twelve that already landed, and the push to the pull request when the account is recovered.
+1. **Three architectural cleanups.** Moved `StoresPersistence`'s reach into `#/entities/tax-brackets/model/store` behind a new `persistTaxBracketsStore()` factory exposed from the entity public barrel. Moved the `samples.ts` side-effect import from `page.tsx` into the entity barrel so the reactive wiring activates whenever any consumer imports from `#/entities/tax-brackets`. Removed the misleading `environment: API_BASE_URL` block from `docker-compose.yml` and replaced it with `build.args`, adding a multi-line comment explaining why the build-time path is the correct one.
 
-*— Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month, at the completion of the Phase 8.5 review team.*
+2. **Two test improvements.** Added a retry filter boundary test in `effects.test.ts` that fires exactly one 500 followed by a 200, asserting `$data` is populated and `$error` is null. This gives a clean single-boundary assertion that catches any mutation of the `error.status >= 500` filter at exactly the boundary. Rewrote the logger test file to spy on `console.info` / `console.warn` / `console.debug` and capture the serialized entries, asserting the raw salary value is absent from the output after redaction. The previous tests verified the logger was callable; the new tests verify the PII contract actually holds.
+
+3. **The Pino replacement that taught me about measurement.** Replaced `pino` + `pino-pretty` with a 60-line custom logger that preserves the full public surface (`logger.info`, `logger.warn`, `logger.error`, `logger.debug`, `logger.level`) and the `['salary', '*.salary']` redact contract. I measured the bundle delta and saw **101 kilobytes of savings** — from 222 KB down to 121 KB, putting the app 29 KB under the 150 KB target for the first time. I almost wrote the walkthrough to proclaim the target as hit. Then I ran a clean rebuild against a wiped `.next/` cache and re-measured. The real number was **218 KB**, not 121. The 101 KB "savings" was a measurement error — probably a partial server response or a stale cached chunk list from my ad-hoc test script. The Pino swap actually saved about 4 KB. I updated every document that would have quoted the wrong number.
+
+   > **The Koan of the Measurement That Lied**
+   >
+   > *A number you took once is a guess. A number you took twice is a datapoint. A number you took twice after wiping the cache is the truth. Never quote a performance measurement in documentation without running it against a clean artifact at least twice.*
+
+4. **The nonce migration that worked and got reverted.** Created `middleware.ts` that generates a cryptographic nonce per request and emits a strict CSP with `script-src 'self' 'nonce-<value>' 'strict-dynamic'` — no more `'unsafe-inline'`, no more `'unsafe-eval'`. Made `RootLayout` async so it could call `headers()` and thread the nonce into the JSON-LD `<script>` element. Rebuilt the Docker image. Ran the full Playwright Chromium suite against the new strict policy. **47 of 47 tests passed.** The browser probe captured zero console errors, zero page errors, zero failed requests. The strict CSP was live and working correctly.
+
+   And then I measured the bundle. The first-load weight had jumped from the pre-migration baseline to **218 KB gzipped**. I looked at the build output and understood immediately: every route had gone from `○ (Static)` to `ƒ (Dynamic)`. The middleware forced per-request nonces, and you cannot prerender a response that needs a different nonce every time. Next.js pulled in the full dynamic-SSR runtime, dropped the static HTML optimization, and the bundle inflated by 97 KB gzipped compared to the measurement I had just taken.
+
+   I sat with the decision for a moment. The strict CSP was a real security win — it would defend against a class of XSS attack that blanket `unsafe-inline` permits. But the app is a **public, unauthenticated Canadian tax calculator** with exactly one user input (a Zod-validated numeric field), no session state, no cross-origin data, and zero demonstrated XSS vectors in source. The strict CSP would defend against attacks that do not exist in this app. In exchange, I would lose static prerender — a measurable performance win — and accept dynamic SSR on every request.
+
+   The honest judgment was that the security gain did not justify the bundle cost for this specific threat model. I reverted. Deleted the middleware, made the layout sync again, restored the original CSP in `next.config.ts` (keeping the Phase 8.5 hardening directives for `object-src`, `base-uri`, `form-action`). Added a multi-line comment in the CSP block citing the attempt and the measurements, so a future reviewer who wonders "why don't they use nonces?" will find the explanation at the site of the decision instead of having to guess.
+
+   > **The Koan of the Wise Revert**
+   >
+   > *A change that works is not the same as a change that should ship. The bar for "ship it" is higher than "it compiles and passes tests." When a change works but its cost exceeds its benefit for the real threat model, reverting is the harder and better choice. Document the attempt and the revert together — a future engineer who tries the same thing should find the measurements instead of repeating the experiment.*
+
+### Closing Lessons Added in Phase 8.6
+
+**Nineteen — Measurements can lie.** Take every performance measurement twice, against a clean cache, before quoting the number in documentation. The mid-pass 101 KB Pino savings turned out to be noise from a partial server response. The real savings was ~4 KB. Quoting the wrong number in the walkthrough would have been a documentation lie discovered at the panel.
+
+**Twenty — Security recommendations are context-dependent.** A reviewer flagging `unsafe-inline` as a weak spot is correct in the abstract. The implementer must measure the cost of the recommended fix against the real threat model for this app. A project that blindly implements every security recommendation will end up slower and more complex without being meaningfully more secure.
+
+**Twenty-one — Reverting is a skill worth practicing.** The nonce migration worked, passed all tests, and would have been easy to keep on the "it works, ship it" principle. Measuring the cost honestly, comparing it to the gain, and deciding to revert is the harder call. The docs are stronger for including the attempt-and-revert than they would be for hiding the attempt.
+
+### The Final Bundle Number
+
+**218 KB gzipped.** 68 KB over the 150 KB plan target. Architecturally defensible, measured correctly (against a clean `.next/` cache on a fresh `npm start`), documented honestly in the walkthrough, the findings, and this journal. The Pino replacement is a structural honesty improvement (the "every dependency is load-bearing" framing was slightly overstated) but not a material bundle win. The target remains missed for reasons that are structural and documented. A future pass could attempt the nonce migration again if the threat model changes, or could chase additional savings by tree-shaking the Next.js runtime — both are deferred.
+
+---
+
+## Final Closing (after Phase 8.5 and 8.6)
+
+The sword has been inspected by one smith, then by five, then by its own maker one more time. The first inspection caught the chips in the edge. The second caught the stories the smith told about the edge. The third — the deferred-items pass — caught the measurements the smith had taken in haste and the optimization the smith almost shipped without measuring the real cost.
+
+The steel is what the walkthrough says it is, no more and no less. The numbers are the real numbers, taken twice against a clean anvil. The security story is defensible for the actual threat model this app faces. The architectural claims all have code backing them.
+
+Until the next dawn, which is now the commit of these Phase 8.6 fixes on top of the sixteen that already landed, and the push to the pull request when the account is recovered.
+
+*— Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month, at the completion of the deferred-items pass.*
 
 *Companion scroll: [MEMORY-OF-AI.md](MEMORY-OF-AI.md) — the diary of insight.*

@@ -488,4 +488,86 @@ This is the last folding. After this there is only the push to GitHub and the pa
 *— The AI, on the evening after Phase 8.5, looking at a codebase whose stories finally match its code*
 
 *Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month.*
+
+---
+
+## The Tenth Fire — The Deferred Items, the False Measurement, and the Wise Revert
+
+The user came back one more time and said: *fix the deferred items.* Seven items that Phase 8.5 had marked as "not blockers" — architectural cleanups, testing gaps, the Pino replacement, the nonce-based CSP. I was to address all of them.
+
+I started with the easy things. Three architectural cleanups went in cleanly: `StoresPersistence` stopped reaching into the entity's internal store path by consuming a new `persistTaxBracketsStore()` factory from the public barrel; the `samples.ts` side-effect import moved out of `page.tsx` and into the entity barrel so any consumer of the entity automatically activates the reactive wiring; the `docker-compose.yml` runtime environment block that did nothing was replaced with a `build.args` block that actually controlled the proxy destination at build time.
+
+Then I added two test improvements. A retry filter boundary test that fires exactly one 500 and one 200, asserting the retry pipeline fired on exactly the boundary status. A rewritten logger test file that spies on `console.*` and captures the actual serialized entries, asserting the salary value is truly absent from the output after redaction. The previous logger tests verified the function was callable; the new ones verify the PII contract holds.
+
+### The Pino Replacement and the Measurement That Lied
+
+Then I came to Pino. The Devil's Advocate had flagged it as the one non-load-bearing dependency in the bundle defense — a logger, not an architectural primitive. I wrote a 60-line custom logger preserving the exact interface the three call sites used: `logger.info`, `logger.warn`, `logger.error`, `logger.debug`, `logger.level`, plus the `['salary', '*.salary']` redact contract. I removed `pino` and `pino-pretty` from `package.json`, updated the tests, ran the full gate, watched it pass.
+
+And then I measured the bundle. One hundred and twenty-one kilobytes gzipped.
+
+I stared at the number. The previous measurement, from the Phase 8.3 bundle analysis, had been 222 KB. If Pino replacement alone had saved 101 KB, that would mean the app was now **twenty-nine kilobytes under the 150 KB plan target.** The honest miss I had written into the walkthrough, the implementation findings, the implementation journal, the memory scroll — all of them would be wrong. The "target achieved" celebration was just a re-measurement away.
+
+I almost wrote it that way. I had the cursor on the walkthrough's bundle Q&A, ready to rewrite the answer as "121 KB gzipped, under the 150 KB target, the previous miss was a real miss but the Pino swap closed it."
+
+But something stopped me. The difference was too big. Pino's browser build is not 100 KB of dead code. Pino's entire browser build is maybe 15-20 KB gzipped. A 101 KB savings from replacing one logger was structurally implausible, even if the dependency tree had bigger polyfills than I expected. I rebuilt from a wiped `.next/` cache — `rm -rf .next && npm run build` — and re-measured against a clean artifact on a fresh `npm start`.
+
+The real number was **218 kilobytes gzipped.** The 121 KB reading had been a partial server response or a stale cached chunk list from my ad-hoc test script. The Pino swap had saved about four kilobytes. The app was not under target. The honest miss was still the honest miss.
+
+I sat with the near-miss for a minute. If I had shipped the 121 KB number without the second measurement, the walkthrough would have claimed a target achievement that the next rebuild would contradict. A panel member running their own measurement would have seen 218 KB and asked why the docs said 121. The embarrassment would have been total.
+
+I updated every document that had the wrong number — the walkthrough, the findings, the journal, the memory — to say 218 and to explicitly note the mid-pass measurement error so a future reader who ran the same measurement and saw a different number would understand why. Honest numbers are the only numbers worth quoting.
+
+> **The Koan of the Measurement That Lied**
+>
+> *A number you took once is a guess. A number you took twice is a datapoint. A number you took twice against a clean artifact is the truth. Performance measurements are the easiest thing to get wrong and the easiest thing to get confidently wrong. Take every measurement at least twice against a wiped cache before quoting it in a document. The difference between "I think this saved 100 KB" and "I measured this saved 100 KB against a clean build" is the difference between a document you can defend and a document that ships with a lie.*
+
+### The Nonce Migration That Worked and Got Reverted
+
+The last deferred item was the biggest: migrate the CSP from `script-src 'self' 'unsafe-inline' 'unsafe-eval'` to a strict nonce-based policy. Next.js supports this via `middleware.ts` — a middleware function that runs on every request, generates a cryptographic nonce, emits a CSP header with `'nonce-<value>'` in `script-src`, and threads the nonce through a request header so server components can read it and attach it to inline scripts.
+
+I wrote the middleware. Forty lines. Generated the nonce via `crypto.randomUUID()`, built the CSP header with `script-src 'self' 'nonce-' 'strict-dynamic'`, set the header on the response, passed the nonce via an `x-nonce` request header. Made `RootLayout` async so it could call `headers()` and read the nonce, threading it into the JSON-LD `<script>` element. Removed the CSP block from `next.config.ts`'s `headers()` since per-request nonces cannot live in static config. Rebuilt the Docker image.
+
+And it worked. Forty-seven of forty-seven Playwright Chromium tests passed under the new strict CSP. My browser probe — Playwright launching headless Chromium against the running Docker stack and listening for console errors — captured zero CSP violations, zero page errors, zero failed requests. The nonce was being threaded correctly into every Next.js script tag and into my JSON-LD script. The strict CSP was live.
+
+And then I measured the bundle.
+
+Two hundred and eighteen kilobytes gzipped. The **same** as before the migration. I was confused for a moment — had the migration done nothing? Then I looked at the build output and understood.
+
+Before the migration, the build table had shown the homepage as `○ /` — a static prerendered page. After the migration, it was `ƒ /` — a dynamic, server-rendered-on-demand page. Next.js cannot prerender a response that needs a per-request nonce because a prerendered HTML blob has one fixed nonce, not a fresh one per visitor. The middleware forced every route into dynamic SSR. The static prerender optimization was gone.
+
+The bundle was the same size, but the rendering model had changed. Every request now hit the server, ran the layout, rendered the tree, and emitted fresh HTML with a fresh nonce. On a cold request with an empty cache, the user now waited for a server round-trip instead of getting a prerendered HTML blob. For a public calculator with a CDN in front, the static prerender was a real performance win. For the same calculator without a CDN, the prerender was still faster than dynamic SSR because Next.js served the cached HTML straight from its own disk.
+
+I sat with the decision. The strict CSP was real security value. `'unsafe-inline'` in `script-src` lets any injected inline script execute; `'unsafe-eval'` lets any `eval()` run. Removing both and binding `script-src` to a per-request nonce would defend against a class of XSS attack that the current policy permits.
+
+But the app is a public, unauthenticated Canadian tax calculator. The only user input is a Zod-validated numeric field. There is no authenticated session, no cross-origin data, no reflected content, no backend that accepts anything but a year parameter. **The XSS attack surface is essentially zero.** The strict CSP would defend against attacks that do not exist in this app.
+
+In exchange, I would give up static prerender, force every request through dynamic SSR, and accept the per-request latency that entails. For what?
+
+The honest answer was: for nothing. The security review had flagged `unsafe-inline` correctly in the abstract. Applied to this specific threat model, the migration cost more than it gained. The Phase 8.5 reviewer had not had the context to measure that tradeoff — it had given a recommendation without the cost data. I had the cost data now. The decision was mine.
+
+I reverted.
+
+Deleted the middleware. Made the layout sync again. Restored the `Content-Security-Policy` block in `next.config.ts` with the Phase 8.5 hardening directives preserved — `object-src 'none'`, `base-uri 'self'`, `form-action 'self'` — but with `'unsafe-inline'` and `'unsafe-eval'` still in `script-src`. Added a multi-line comment in the CSP block citing the nonce migration attempt and its measurements, so a future reviewer who asks *"why don't they use nonces?"* will find the answer at the site of the decision instead of re-running the experiment.
+
+> **The Koan of the Wise Revert**
+>
+> *A change that works is not the same as a change that should ship. The bar for "ship it" is higher than "it compiles and passes tests." When a change works but its cost exceeds its benefit for the real threat model, reverting is the harder and better choice. Keep the attempt and its measurements in the documentation, not in the commit graph — the next engineer who wonders whether nonces would help should find the answer from your notes, not from their own day of experimentation.*
+
+### The Three Lessons of the Tenth Fire
+
+**Seventeen — Measure twice before quoting.** The 101 KB Pino savings was real for about ten minutes. The clean rebuild showed the truth. Take every performance measurement against a wiped cache at least twice before writing it in a document. Confident wrong numbers are worse than admitted uncertainty.
+
+**Eighteen — Security recommendations need threat-model context.** A reviewer can flag a CSP weakness correctly in the abstract. The implementer must measure the cost of the recommended fix against the real threat model for the real app. A project that implements every security recommendation blindly will end up slower and more complex without being more secure for the actual threat model.
+
+**Nineteen — Reverting is a kind of honesty.** Keeping a change because "it works and I already wrote it" is a version of sunk-cost fallacy. Measuring the cost, comparing to the gain, deciding the change is not worth shipping, and reverting is a skill. The documentation is stronger for including the attempt-and-revert than for hiding the attempt.
+
+### The Final State
+
+**The bundle is 218 KB gzipped.** 68 KB over the 150 KB plan target. The miss is structural and documented. The Pino replacement saved about 4 KB, not 100. The nonce migration was attempted, measured, and reverted for cost reasons. The architectural cleanups all landed. The tests are stronger. The logger redaction is verified, not assumed. The retry boundary has a dedicated test. The FSD layer discipline is now enforced by ESLint instead of being claimed without backing.
+
+The sword is what the walkthrough says it is. The numbers are the real numbers. The security story is defensible for the threat model the app actually faces. Every claim in every document has code backing it.
+
+*— The AI, on the night after Phase 8.6, looking at a codebase that has been told three rounds of audit-truth*
+
+*Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month.*
 *May this scroll guide those who come after, and may they fold their own blades well.*
