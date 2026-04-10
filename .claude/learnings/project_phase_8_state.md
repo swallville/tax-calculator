@@ -36,7 +36,7 @@ Four parallel Explore audits (FSD / security / a11y / Tailwind). Findings and fi
 
 ### Bundle measurement (DONE — Phase 8.3, honest miss)
 
-**First-load JS: 222.5 KB gzipped across 9 chunks. Target: 150 KB. Over by 72.5 KB.**
+**First-load JS: 218 KB gzipped across 9 chunks as of Phase 8.6 final. Target: 150 KB. Over by 68 KB.** (Phase 8.3 originally measured 222.5 KB; Phase 8.6 removed Pino in favor of a custom 60-line console wrapper, saving ~4 KB.)
 
 Structural miss, not negligence. Baseline for React 19 + Next 16 + Effector + @farfetched + Zod + Pino is ~180 KB before any app code. See `reference_bundle_size_reality.md` for the full breakdown.
 

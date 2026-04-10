@@ -40,7 +40,7 @@ If a section runs long, drop sections 7 or 8 first — they have the strongest w
 
 > The back-end team shipped a Flask API that returns Canadian federal tax brackets for the years 2019 through 2022. It is deliberately unreliable — it fails about one in four requests with a 500 and sleeps up to five seconds between responses. My job was to build a frontend that lets a user enter a salary and a year, fetches the brackets, computes the per-band tax and the effective rate, and handles the backend's flakiness gracefully.
 
-> I treated this as a production exercise, not a prototype. The solution is 78 source files, 220 unit tests across 23 suites, and 187 end-to-end tests across four browsers. Statement coverage is at 100, and the Jest config fails any build that drops below an 85 percent threshold.
+> I treated this as a production exercise, not a prototype. The solution is 78 source files, 227 unit tests across 23 suites, and 187 end-to-end tests across four browsers. Statement coverage is at 100, and the Jest config fails any build that drops below an 85 percent threshold.
 
 **List the six requirements from the back-end README by memory** if you can — it reads as preparation:
 

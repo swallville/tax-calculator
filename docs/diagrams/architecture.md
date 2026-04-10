@@ -37,7 +37,7 @@ graph TB
         U[calculateTax<br/>bracket algorithm]
         V[formatCurrency / formatPercent<br/>cached Intl]
         W[parseCurrency<br/>strip $, commas]
-        X[logger<br/>Pino with salary redact]
+        X[logger<br/>custom console wrapper<br/>with salary redact]
         Y[createPersistedStore<br/>TTL + sanitize]
         Z[test-utils<br/>RTL render wrapper]
     end

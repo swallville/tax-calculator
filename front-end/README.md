@@ -144,21 +144,21 @@ them together.
 
 ## Tech Stack
 
-| Package                                | Version | Role                                                        |
-| -------------------------------------- | ------- | ----------------------------------------------------------- |
-| `next`                                 | 16.2    | App framework — App Router, API rewrites, standalone output |
-| `react` / `react-dom`                  | 19      | UI rendering, `useActionState` for forms                    |
-| `effector` / `effector-react`          | 23      | Reactive state — stores, events, effects                    |
-| `@farfetched/core` / `@farfetched/zod` | 0.14    | Query layer over effects: cache, retry, Zod contracts       |
-| `zod`                                  | 3       | API response validation and form input validation           |
-| `tailwindcss`                          | 4       | CSS-first utility framework with design token integration   |
-| `pino`                                 | 9       | Structured JSON logging                                     |
-| `clsx`                                 | 2       | Conditional className composition                           |
-| `effector-storage`                     | 7       | Persist Effector stores to localStorage                     |
-| `@swc/jest`                            | —       | Fast Jest transform via SWC                                 |
-| `@playwright/test`                     | 1.49    | Cross-browser E2E test runner                               |
-| `playwright-bdd`                       | 8.5     | Gherkin/BDD layer on top of Playwright                      |
-| `@testing-library/react`               | 16      | Component testing utilities                                 |
+| Package                                | Version | Role                                                                                                                                                                                                                                                                |
+| -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next`                                 | 16.2    | App framework — App Router, API rewrites, standalone output                                                                                                                                                                                                         |
+| `react` / `react-dom`                  | 19      | UI rendering, `useActionState` for forms                                                                                                                                                                                                                            |
+| `effector` / `effector-react`          | 23      | Reactive state — stores, events, effects                                                                                                                                                                                                                            |
+| `@farfetched/core` / `@farfetched/zod` | 0.14    | Query layer over effects: cache, retry, Zod contracts                                                                                                                                                                                                               |
+| `zod`                                  | 3       | API response validation and form input validation                                                                                                                                                                                                                   |
+| `tailwindcss`                          | 4       | CSS-first utility framework with design token integration                                                                                                                                                                                                           |
+| _custom logger_                        | —       | 60-line structured logger in `src/shared/lib/logger/logger.ts` — `console.*` wrapper with salary redaction, Pino-shaped numeric levels. Replaced the `pino` dependency in Phase 8.6 to correct an architectural-honesty claim about dependency bundle contribution. |
+| `clsx`                                 | 2       | Conditional className composition                                                                                                                                                                                                                                   |
+| `effector-storage`                     | 7       | Persist Effector stores to localStorage                                                                                                                                                                                                                             |
+| `@swc/jest`                            | —       | Fast Jest transform via SWC                                                                                                                                                                                                                                         |
+| `@playwright/test`                     | 1.49    | Cross-browser E2E test runner                                                                                                                                                                                                                                       |
+| `playwright-bdd`                       | 8.5     | Gherkin/BDD layer on top of Playwright                                                                                                                                                                                                                              |
+| `@testing-library/react`               | 16      | Component testing utilities                                                                                                                                                                                                                                         |
 
 ---
 
@@ -283,7 +283,7 @@ front-end/
       tax-calculator/
     entities/       Business domain models (Effector stores, events, effects)
       tax-brackets/
-    shared/         Reusable utilities, API client, Pino logger, test helpers
+    shared/         Reusable utilities, API client, custom structured logger, test helpers
       api/
       lib/
   e2e/              Playwright E2E tests — specs, Page Objects, Gherkin features
@@ -340,9 +340,11 @@ token reference.
 
 ### Logging
 
-Use the Pino logger from `#/shared/lib/logger`. Never log salary amounts (PII).
-Permitted: API calls, retry attempts, errors, calculation results (total tax and
-effective rate only).
+Use the custom structured logger from `#/shared/lib/logger`. Never log salary
+amounts (PII) — the logger's `redact` list replaces any field named `salary` at
+the top level or one level nested with `'[Redacted]'` before emit. See
+`src/shared/lib/logger/logger.ts`. Permitted: API calls, retry attempts, errors,
+calculation results (total tax and effective rate only).
 
 ### Quality gate
 

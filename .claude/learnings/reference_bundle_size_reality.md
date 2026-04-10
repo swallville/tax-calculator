@@ -4,9 +4,9 @@ description: Realistic first-load JS baseline for Next.js 16 + React 19 + Effect
 type: reference
 ---
 
-**The first-load JS bundle for the tax-calculator is 222.5 KB gzipped, measured on 2026-04-10 in Phase 8.3 against the production build served by the Docker frontend.**
+**The first-load JS bundle for the tax-calculator is 218 KB gzipped, measured on 2026-04-10 at the end of Phase 8.6 against a clean rebuild of the production artifact.**
 
-This is 72.5 KB over the 150 KB target in `docs/IMPLEMENTATION-PLAN.md` Final Checklist item 14. The miss is structural, not negligence.
+This is 68 KB over the 150 KB target in `docs/IMPLEMENTATION-PLAN.md` Final Checklist item 14. The miss is structural, not negligence. Phase 8.3 originally measured 222.5 KB; Phase 8.6 removed Pino and landed the final number at 218 KB after the custom logger swap (about 4 KB saved, smaller than the Phase 8.5 review's 10-15 KB estimate). A mid-pass measurement during Phase 8.6 appeared to show ~101 KB of Pino savings (reading of 121 KB), but that turned out to be noise from a partial server response against a stale cache — the clean rebuild showed the real number is 218 KB.
 
 ### Baseline breakdown (approximate gzipped contribution)
 
@@ -21,7 +21,7 @@ This is 72.5 KB over the 150 KB target in `docs/IMPLEMENTATION-PLAN.md` Final Ch
 | effector-storage + clsx + misc | ~5 KB |
 | App code (widgets, hooks, samples, selectors) | ~20 KB |
 | **Baseline before optimization** | **~180 KB** |
-| Observed total | **222.5 KB** |
+| Observed total (Phase 8.6 final) | **218 KB** |
 | Next.js runtime overhead above baseline | ~40 KB (reasonable) |
 
 ### Why the original 150 KB target does not apply
@@ -47,7 +47,7 @@ The reason: **Next.js App Router prefetches dynamically-imported client componen
 
 **How to apply:**
 
-1. **If the panel asks about bundle size, answer with the measured number (222.5 KB) and the baseline decomposition (~180 KB before app code).** Lead with the honest number, not the aspirational target. Defending a miss with reasons is integrity; hiding a miss with micro-optimizations is a lie.
+1. **If the panel asks about bundle size, answer with the measured number (218 KB gzipped as of Phase 8.6) and the baseline decomposition (~180 KB before app code).** Lead with the honest number, not the aspirational target. Defending a miss with reasons is integrity; hiding a miss with micro-optimizations is a lie. Phase 8.3 originally measured 222.5 KB; Pino was replaced with a custom logger in Phase 8.6 saving ~4 KB. Also mention the nonce CSP migration that was attempted and reverted in Phase 8.6 after the measurement showed it forced every route from static prerender to dynamic SSR — the security gain did not justify the cost for this specific threat model.
 2. **If a future task is "get the bundle under 150 KB"**, start by challenging the target itself. The architectural cost of the last 72 KB is enormous — dropping a load-bearing dependency. Document the trade and get explicit approval before starting.
 3. **Do not attempt bundle optimizations speculatively.** Every optimization must be backed by a measurement showing the delta. `next/dynamic` with `ssr: false` in App Router does not defer loads — it splits chunks that still get prefetched on first paint. Verified empirically in this session.
 4. **The high-leverage optimization, if you ever need one, is Pino replacement.** Pino's browser build is larger than its Node build and most of it is features the browser does not need. Replacing Pino with a smaller browser-only logger would save ~10–15 KB. Everything else is core architecture.

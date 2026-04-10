@@ -143,7 +143,7 @@ shared/
 │   │   ├── parseCurrency.ts # parseCurrency: strips $ and commas → number
 │   │   └── index.ts
 │   ├── logger/
-│   │   ├── logger.ts        # Pino browser logger with salary redact path
+│   │   ├── logger.ts        # Custom structured logger with salary redact path
 │   │   └── index.ts
 │   ├── store/
 │   │   └── createPersistedStore.ts  # effector-storage/local wrapper with TTL + sanitize

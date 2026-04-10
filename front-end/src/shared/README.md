@@ -14,7 +14,7 @@ shared/
 ├── api/          # Generic fetch wrapper and ApiError class
 └── lib/
     ├── format/   # Intl.NumberFormat wrappers for currency and percent
-    ├── logger/   # Pino structured logger with salary redaction
+    ├── logger/   # Custom structured logger with salary redaction
     ├── store/    # Effector store persistence with TTL
     ├── tax/      # calculateTax() algorithm and shared domain types
     └── test/     # RTL render wrapper with application providers

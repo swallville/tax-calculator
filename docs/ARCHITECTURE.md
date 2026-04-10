@@ -11,7 +11,7 @@
 | State Management | Effector + effector-react | 23.x |
 | Data Fetching | @farfetched/core (query + mutation + retry) | 0.14.x |
 | Validation | Zod (API contracts + form validation) | 3.23.x |
-| Logging | Pino (browser transport) | 9.x |
+| Logging | Custom structured logger (`console.*` wrapper with salary redact) | — |
 | Store Persistence | effector-storage/local | 7.x |
 | Unit Testing | Jest + @swc/jest + RTL | 29.x |
 | E2E Testing | Playwright (4 browser projects) | 1.49.x |

@@ -121,15 +121,17 @@ Zod 3.23.x is used in two places:
 
 All types consumed by the rest of the app are derived via `z.infer<typeof Schema>` — no duplicated type definitions.
 
-### Pino
+### Custom structured logger
 
-Pino 9.x is used for structured logging with the browser transport (`browser: { asObject: true }`).
+A 60-line custom logger in `src/shared/lib/logger/logger.ts` wraps `console.debug/info/warn/error` with structured entries and a salary-redacting `redact()` helper. This replaced the Pino dependency during the Phase 8.6 deferred-items pass after the Phase 8.5 adversarial review flagged Pino as the one non-load-bearing dependency in the bundle defense.
 
-**Critical rule: salary values must never appear in log output.** The logger is configured with `redact: ['salary', '*.salary']`. This redacts any field named `salary` at the top level or one level deep in any logged object.
+**Critical rule: salary values must never appear in log output.** The logger's hard-coded redact list (`['salary', '*.salary']`) replaces any field named `salary` at the top level or one level nested in any logged object with the literal string `'[Redacted]'`. This happens before the entry reaches `console.*`, so no downstream transport can leak the raw value. The behavior is verified by `logger.test.ts`, which captures `console.*` output via `jest.spyOn` and asserts both that the redact value is present and that the raw numeric value is absent from `JSON.stringify(entry)`.
 
-Log levels:
+Log levels resolved at module load from `NODE_ENV`:
 - `debug` in development (`NODE_ENV !== 'production'`)
-- `info` and above in production
+- `info` and above in production (debug entries are filtered out before emit)
+
+Numeric level tags emitted in every entry (`debug=20, info=30, warn=40, error=50`) match Pino's scheme, so any log aggregators that parsed the previous Pino output continue to parse the new output unchanged.
 
 Events that are always logged: API call start, retry attempts, calculation result (total tax + effective rate only — never the salary), and all errors with their HTTP status.
 
@@ -181,7 +183,7 @@ Owns everything that has no business domain knowledge:
 - `api/` — generic fetch client and `ApiError` class
 - `lib/tax/` — pure `calculateTax` function
 - `lib/format/` — `formatCurrency` and `formatPercent` utilities
-- `lib/logger/` — Pino browser wrapper
+- `lib/logger/` — Custom structured logger (`console.*` wrapper with salary redact)
 - `lib/store/` — `createPersistedStore` helper and `StoresPersistence` provider
 - `lib/test/` — custom RTL render wrapper
 
@@ -560,7 +562,7 @@ npm run validate         # format:check + lint:fix + tsc:check + analyse:circula
 | Generic fetch client (ApiError class) | `src/shared/api/client.ts` |
 | Marginal-rate tax calculation algorithm | `src/shared/lib/tax/calculateTax.ts` |
 | Currency and percentage formatters | `src/shared/lib/format/currency.ts` |
-| Pino logger (browser, salary redacted) | `src/shared/lib/logger/logger.ts` |
+| Custom structured logger (salary redacted) | `src/shared/lib/logger/logger.ts` |
 | localStorage persistence helper | `src/shared/lib/store/store.ts` |
 | StoresPersistence React provider | `src/shared/lib/store/StoresPersistence.tsx` |
 | Custom RTL render with providers | `src/shared/lib/test/test-utils.tsx` |

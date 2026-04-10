@@ -68,7 +68,7 @@ npm run tsc:check && npm run lint && npm run analyse:circular && npm run test &&
 - `useRetryCalculation` — stable retry callback from stored salary+year
 
 ## Logging
-- **Pino** for structured logging — NEVER log salary amounts (PII)
+- **Custom structured logger** (`src/shared/lib/logger/logger.ts`) — NEVER log salary amounts (PII). Pino was replaced in Phase 8.6 with a 60-line wrapper around `console.*` that preserves the `logger.info/warn/error/debug` interface, the `['salary', '*.salary']` redact contract, and the numeric log levels (debug=20, info=30, warn=40, error=50). The replacement saved ~4 KB gzipped and closed the "every dependency is load-bearing" framing weakness from the Phase 8.5 adversarial review.
 - `redact: ['salary', '*.salary']` configured at logger level
 - Log: API calls, retry attempts, errors, calculation results (total + rate only)
 

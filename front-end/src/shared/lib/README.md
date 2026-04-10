@@ -111,8 +111,15 @@ formatPercent(0.1774); // '17.74%'
 
 ### `logger/` — Structured Logger
 
-A Pino logger instance configured for browser and Node.js environments. The
-logger redacts salary values to prevent accidental PII exposure in log output.
+A custom 60-line structured logger (`logger.ts`) wraps
+`console.debug/info/warn/error` with a consistent entry shape and a hand-written
+`redact()` helper that strips salary values before emit. Replaced the previous
+`pino` dependency during the Phase 8.6 deferred-items pass to correct the
+architectural-honesty claim that every dependency in the bundle was load-bearing
+— Pino was the exception. The replacement preserves the full public interface
+and numeric level values (debug=20, info=30, warn=40, error=50) so log
+aggregators that parsed the previous Pino output continue to parse the new
+output unchanged.
 
 **Public API:**
 
