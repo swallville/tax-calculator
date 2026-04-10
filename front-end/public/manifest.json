@@ -1,0 +1,16 @@
+{
+  "name": "Tax Calculator",
+  "short_name": "TaxCalc",
+  "description": "Canadian income tax calculator",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1A1226",
+  "background_color": "#1A1226",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}

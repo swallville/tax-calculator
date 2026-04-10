@@ -1,0 +1,28 @@
+# Build output
+.next
+out
+dist
+build
+
+# Dependencies
+node_modules
+
+# Test and coverage output
+coverage
+playwright-report
+test-results
+
+# Generated files
+*.tsbuildinfo
+next-env.d.ts
+
+# Cache
+.eslintcache
+.swc
+
+# IDE
+.vscode
+.idea
+
+# Logs
+*.log

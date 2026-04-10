@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+:root {
+  /* Background */
+  --bg-page: #1A1226;
+  --bg-card-form: #241C32;
+  --bg-card-results: #241C32;
+  --bg-input: #31264A;
+  --bg-dropdown: #2A2139;
+  --bg-highlight-row: #332A48;
+  --bg-sub-row: #2D243F;
+  --bg-total-row: #3E3258;
+  --bg-skeleton: #2D243F;
+  --bg-error: #2E1C24;
+  --bg-row-hover: #3B3155;
+
+  /* Text */
+  --text-primary: #F5F0FA;
+  --text-secondary: #B8AEC8;
+  --text-muted: #8A7FA0;
+  --text-accent: #4ECAA0;
+
+  /* Borders */
+  --border-input: #3E3458;
+  --border-subtle: #3A3050;
+  --border-card: #3D3350;
+
+  /* Interactive */
+  --btn-primary: #7C6AE8;
+  --btn-primary-hover: #6B58D6;
+  --btn-primary-active: #5E4DC4;
+  --btn-disabled: #4A3F63;
+  --ring-focus: #7C6AE8;
+
+  /* Status */
+  --status-error: #E85C5C;
+  --status-error-bg: #2E1C24;
+  --status-success: #4ECAA0;
+  --status-info: #60A5FA;
+
+  /* Effective Rate Pill */
+  --pill-bg: rgba(78, 202, 160, 0.1);
+  --pill-text: #4ECAA0;
+}
+
+/*
+ * @theme inline bridges the CSS custom properties above into Tailwind 4's
+ * utility-first pipeline. In v4, there is no tailwind.config.ts — design
+ * tokens live here as CSS variables, and @theme inline maps them to the
+ * --color-*, --font-* namespaces that Tailwind's JIT engine reads when
+ * generating utilities like `bg-bg-card` or `text-text-accent`.
+ * The `inline` keyword means the resolved values are inlined at build time
+ * rather than emitting a new :root block, keeping the output CSS smaller.
+ */
+@theme inline {
+  --color-bg-page: var(--bg-page);
+  --color-bg-card: var(--bg-card-form);
+  --color-bg-card-results: var(--bg-card-results);
+  --color-bg-input: var(--bg-input);
+  --color-bg-dropdown: var(--bg-dropdown);
+  --color-bg-highlight: var(--bg-highlight-row);
+  --color-bg-sub: var(--bg-sub-row);
+  --color-bg-total: var(--bg-total-row);
+  --color-bg-skeleton: var(--bg-skeleton);
+  --color-bg-error: var(--bg-error);
+  --color-bg-row-hover: var(--bg-row-hover);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-accent: var(--text-accent);
+
+  --color-border-input: var(--border-input);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-card: var(--border-card);
+
+  --color-btn-primary: var(--btn-primary);
+  --color-btn-primary-hover: var(--btn-primary-hover);
+  --color-btn-primary-active: var(--btn-primary-active);
+  --color-btn-disabled: var(--btn-disabled);
+  --color-ring-focus: var(--ring-focus);
+
+  --color-status-error: var(--status-error);
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-success: var(--status-success);
+  --color-status-info: var(--status-info);
+
+  --color-pill-bg: var(--pill-bg);
+  --color-pill-text: var(--pill-text);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/*
+ * fade-in-up: used by TaxBreakdown when results arrive.
+ * Slides content up from slightly below its final position, giving the
+ * appearance that results are rising into view — reinforces the "new data
+ * has arrived" mental model without being distracting.
+ */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+ * fade-in-down: used by ErrorState.
+ * Opposite direction to fade-in-up — error messages dropping in from above
+ * creates a visual distinction from success states, which helps users
+ * recognise the change in outcome at a glance.
+ */
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+ * pulse-soft: available as a gentler alternative to Tailwind's built-in
+ * `animate-pulse` (which bottoms out at opacity: 0). This version floors at
+ * 0.5, keeping skeleton elements visible enough that low-vision users can
+ * still perceive the loading state without full disappearance.
+ */
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/*
+ * Reduced-motion override: users who have enabled "reduce motion" in their OS
+ * accessibility settings get near-instant transitions (0.01ms) instead of
+ * the decorative animations above. The !important overrides Tailwind utility
+ * values since those are applied inline and would otherwise win in specificity.
+ * iteration-count: 1 stops looping animations (like pulse) after a single
+ * pass rather than cutting them off mid-frame.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--ring-focus);
+  outline-offset: 2px;
+}
