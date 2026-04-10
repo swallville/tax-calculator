@@ -449,6 +449,64 @@ After Phase 8.5 closed, the user greenlit a second pass to address all seven ite
 - **FIXED — Retry filter boundary test.** Added a new `it('retry filter boundary: exactly HTTP 500 is retried (>= 500 not > 500)')` test in `effects.test.ts` that fires a single 500 followed by a 200 and asserts `$data` is populated and `$error` is null. A clean single-boundary assertion catches any mutation of the filter predicate at exactly the boundary. Test suite went from 220 → 221.
 - **FIXED — True logger redaction test.** Rewrote `logger.test.ts` to spy on `console.info` / `console.warn` / `console.debug`, capture the emitted entries, and assert that the raw salary value is absent from the serialised output after redaction. New assertions also verify non-PII fields pass through untouched, the message-only signature works, the logger does not mutate its input, and debug entries are filtered out under the production level. Suite went from 221 → 227 (six new logger tests).
 - **FIXED (smaller win than estimated) — Pino replacement.** Replaced `pino` + `pino-pretty` with a 60-line custom logger that preserves the full public surface (`logger.info`, `logger.warn`, `logger.error`, `logger.debug`, `logger.level`) and the `['salary', '*.salary']` redact contract. Emits Pino-shaped numerically-tagged entries so any log aggregators that parsed the previous output continue to parse the new output unchanged. **Measured bundle delta: ~4 KB gzipped** (222 KB → 218 KB). A mid-pass measurement appeared to show ~101 KB savings that would have put the bundle under the 150 KB target for the first time, but a clean rebuild against a wiped `.next/` cache produced a consistent 218 KB result. The 121 KB reading was measurement noise — almost certainly a partial server response or a stale cached chunk list from an ad-hoc start-then-curl script. The Pino swap is still worth doing because it corrects the architectural honesty of the bundle-miss defense ("every dependency is load-bearing" was slightly overstated), but it does not change the miss materially. **Every document quoting the 101 KB number was corrected before it shipped to the walkthrough.**
+
+#### The custom logger in detail
+
+The file lives at `front-end/src/shared/lib/logger/logger.ts` and is exactly sixty lines of TypeScript. It has zero runtime dependencies beyond `console` and `process.env.NODE_ENV`. The implementation is structured as five internal pieces plus the public `logger` export:
+
+1. **Numeric level values matching Pino's scheme** — `{ debug: 20, info: 30, warn: 40, error: 50 }`. The numbers are deliberately Pino-compatible so that downstream log aggregators (Datadog, Loki, CloudWatch, any NDJSON-aware tool) that parsed the previous Pino output continue to parse the new output with no config change. `level: 30` still means `info` to every tool that already knew how to read Pino.
+
+2. **Hard-coded redact path list** — `const REDACT_PATHS: readonly string[] = ['salary', '*.salary']` plus `const REDACT_VALUE = '[Redacted]'`. These are the exact two paths Pino was configured with. `'salary'` matches any top-level field; `'*.salary'` matches any one-level-nested field. A `{ form: { salary: 100000 } }` object gets redacted just as reliably as a `{ salary: 100000 }` object.
+
+3. **A `redact()` helper** that shallow-copies the input and replaces matching fields with `'[Redacted]'`. Three design details: it never mutates the caller's object (the test suite explicitly asserts this), it uses an `isPlainObject()` guard so it does not descend into `Date` instances or arrays that happen to have a `salary` key, and on the happy path (no PII field present) it is essentially a no-op spread with zero perf penalty.
+
+4. **A level filter** — `CURRENT_LEVEL: LogLevel = process.env.NODE_ENV === 'production' ? 'info' : 'debug'` resolved once at module load, plus `shouldEmit(level)` which returns early if the entry level is below the current level. Production therefore suppresses debug entries with one numeric comparison and an early return; nearly zero perf cost.
+
+5. **The `emit()` function and the `CONSOLE_SINKS` map.** The sinks are a `Record<LogLevel, (entry) => void>` that routes each level to the matching `console.*` method (`console.debug`, `console.info`, `console.warn`, `console.error`). The `emit()` function builds a `{ level, time, ...redactedContext, msg }` entry object that structurally matches Pino's JSON shape, then hands it to the sink for the appropriate level. Errors route to `console.error` (red in DevTools, captured by browser error monitoring), info routes to `console.info`, and so on.
+
+The public `logger` export is five properties: `level`, `debug`, `info`, `warn`, `error`. Each method accepts two call shapes inherited verbatim from Pino, so the three existing call sites (`samples.ts`, `effects.ts`, `errorMapping.ts`) did not need to change a single character:
+
+```ts
+logger.info('A plain message');                            // message-only
+logger.info({ year: 2022 }, 'Fetching tax brackets');      // context + message
+```
+
+**What the custom logger deliberately does NOT do** (and why that's fine for this app):
+
+- **No transports.** Pino has pluggable transports — file streams, HTTP shippers, pretty-printers. The custom logger writes only to `console.*`. In the browser, `console` is the primary log sink. In a Node standalone server, `console` writes to stdout and any platform log collector (Fly.io logs, Cloud Run logs, Datadog stdout shipper) picks it up automatically.
+- **No child loggers.** Pino supports `logger.child({ component: 'x' })` to create a scoped sub-logger. The app does not use this pattern; every call site passes its own context inline. Adding child loggers would be roughly eight more lines if ever needed.
+- **No dynamic level changes.** Pino supports `logger.level = 'debug'` at runtime. The custom logger resolves the level once at module load. This matches how the app was actually using Pino — there was no runtime level switching.
+- **No structured serializers.** Pino lets you register custom serializers to transform specific field values before emit. The `redact()` helper does the one transform the app actually needs.
+
+These omissions are not compromises — they are the smallest viable feature set for this specific app. A future version could add any of these concerns in under a hundred lines each, and the test suite would cover the new behavior the same way it covers the current one.
+
+#### Test coverage of the redaction contract
+
+The previous Pino-era `logger.test.ts` had three tests that verified the logger was callable, was defined, and did not throw when passed a salary field. **None of them verified that the salary value was actually absent from the log output.** The Phase 8.5 Devil's Advocate caught this as a structural tautology — the file claimed to test "PII redaction" but structurally tested "the logger exists."
+
+The Phase 8.6 rewrite replaced it with thirteen assertions across four describe blocks:
+
+- **Interface contract:** all four level methods are functions; `level` property reflects the resolved environment.
+- **PII redaction:** after `logger.info({ salary: 100000, year: 2022 }, 'msg')`, the captured `console.info` entry has `salary: '[Redacted]'` and the serialized output (`JSON.stringify(entry)`) does not contain the raw `'100000'` anywhere in it. Same check for nested `form.salary` with `85000`.
+- **Non-PII passthrough:** `totalTax` and `effectiveRate` fields appear unchanged in the captured entry.
+- **Input immutability:** the original object still has the real salary value after the call, proving the redaction creates a copy.
+- **Message-only signature:** `logger.info('plain string')` emits a properly-structured entry with the expected numeric level (`30`) so log aggregators can still parse it.
+- **Level filter:** debug entries emit in dev; production drops them entirely (verified via `jest.isolateModules` with `NODE_ENV='production'`).
+
+Every assertion is behavioral — it asserts on the *output* the logger produces, not the *implementation* of the logger. If a future refactor replaces the internals again, the tests continue to exercise the contract without rewriting.
+
+#### The silent-during-tests detail
+
+Because the custom logger routes to real `console.*` methods (whereas Pino's browser build has a quieter default), the test suite was initially leaking "Tax calculated" entries from `samples.ts` into Jest stdout during the full run, cluttering the output without actually failing anything. Fixed in `jest.setup.js` by mocking `console.debug/info/warn/error` globally at test-harness setup time:
+
+```js
+jest.spyOn(console, 'debug').mockImplementation(() => {});
+jest.spyOn(console, 'info').mockImplementation(() => {});
+jest.spyOn(console, 'warn').mockImplementation(() => {});
+jest.spyOn(console, 'error').mockImplementation(() => {});
+```
+
+Individual test files that need to capture output (the logger test file being the only one) layer their own `jest.spyOn` calls on top of the base mock, which replaces the mock implementation for the duration of the test and captures the calls for assertion. Standard Jest idiom, works cleanly, costs nothing.
 - **ATTEMPTED AND REVERTED — CSP nonce migration.** Created `front-end/middleware.ts` that generated a per-request nonce via `crypto.randomUUID()`, emitted `script-src 'self' 'nonce-<value>' 'strict-dynamic'`, and propagated the nonce via an `x-nonce` request header. Made `RootLayout` async so it could read the nonce via `headers()` and attach it to the JSON-LD `<script>` element. Moved the CSP out of `next.config.ts` `headers()` into the middleware. Rebuilt the Docker image. **47/47 Playwright chromium tests passed. Zero browser console violations.** The strict CSP was live and working. And then the bundle measurement showed every route had switched from `○ (Static)` to `ƒ (Dynamic)` because per-request nonces cannot be statically prerendered. The first-load bundle inflated from 218 KB to 218 KB (same total, because the dynamic-SSR runtime added code that offset the CSP savings in other chunks), but more importantly the **static prerender optimization was gone** — every request would now hit the server, render the tree, and emit fresh HTML with a fresh nonce. For a public unauthenticated Canadian tax calculator with exactly one Zod-validated numeric user input and zero demonstrated XSS vectors, the strict CSP would defend against attacks that do not exist in this app while giving up the static prerender win. **Decision: reverted.** Deleted the middleware, made the layout sync again, restored the original CSP in `next.config.ts` with the Phase 8.5 hardening directives preserved (`object-src`, `base-uri`, `form-action`), and added a multi-line comment in the CSP block citing the attempt and its measurements. A future reviewer wondering "why don't they use nonces?" will find the answer at the site of the decision instead of having to re-run the experiment.
 
 **Phase 8.6 final bundle number:** **218 KB gzipped**, 68 KB over the 150 KB plan target. Measured against a clean `.next/` cache on a fresh `npm start` on an ephemeral port. Three lessons stand out:

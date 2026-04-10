@@ -38,7 +38,7 @@ sequenceDiagram
 
     Query->>Retry: filter({ error: ApiError(500) })
     Retry->>Retry: status >= 500? YES → retry
-    Note over Retry: logger.info("Retrying after server error")
+    Note over Retry: logger.info("Retrying after server error")<br/>Custom console.* wrapper, no external dep
 
     loop Up to 3 retries (1s delay each)
         Retry->>Flask: GET /tax-year/2022 (retry)

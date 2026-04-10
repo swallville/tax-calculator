@@ -60,7 +60,7 @@ src/
     │   ├── format/
     │   │   ├── currency.ts     # formatCurrency() — Intl.NumberFormat cached at module scope
     │   │   └── percent.ts      # formatPercent() — Intl.NumberFormat cached at module scope
-    │   ├── logger/             # Pino browser wrapper with salary redact config
+    │   ├── logger/             # Custom 60-line console.* wrapper with salary redact config
     │   ├── store/              # createPersistedStore + StoresPersistence component
     │   └── test/               # Custom RTL render with Effector Scope provider
     └── ui/                     # Shared primitives: Spinner, Badge
@@ -252,4 +252,4 @@ Set via `next.config.ts` `headers()` for all routes:
 - **Store persistence**: `effector-storage/local` persists the last result with a 2-minute TTL; salary is excluded from persistence as PII.
 - **Tailwind 4**: CSS-first config via `@theme inline` in `globals.css`; 28 design tokens drive all color, spacing, and typography utilities. No `tailwind.config.ts` exists.
 - **Import aliases**: `#/shared/*`, `#/entities/*`, `#/widgets/*` declared in `tsconfig.json` and enforced by ESLint import-boundary rules.
-- **Logging**: Pino browser transport with a `redact` configuration that strips salary values from all log output before they reach the browser console or any transport destination.
+- **Logging**: Custom 60-line structured logger at `src/shared/lib/logger/logger.ts`. Wraps `console.debug/info/warn/error` and applies a hand-written `redact()` helper with the path list `['salary', '*.salary']` to strip salary values before emit. Preserves Pino-compatible numeric level values (`debug=20, info=30, warn=40, error=50`) so downstream log aggregators that parsed the previous Pino NDJSON output continue to parse the new output with no config change. Replaced the `pino` dependency during the Phase 8.6 deferred-items pass to correct the architectural-honesty claim that every bundle dependency was load-bearing — Pino was the one exception, a logger masquerading as architecture.

@@ -47,7 +47,7 @@ sequenceDiagram
     Sample->>CalcTax: calculateTax(100000, brackets)
     CalcTax-->>Sample: { totalTax, effectiveRate, bands }
 
-    Note over Sample: logger.info({ totalTax, effectiveRate })<br/>NEVER logs salary (PII)
+    Note over Sample: logger.info({ totalTax, effectiveRate })<br/>Custom 60-line logger redacts salary<br/>via ['salary', '*.salary'] path list
 
     Sample->>Store: setBrackets({ totalTax, effectiveRate, bands })
 
