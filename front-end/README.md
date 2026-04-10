@@ -320,8 +320,11 @@ layers below it, never from layers above.
 app  →  widgets  →  entities  →  shared
 ```
 
-Breaking this rule is flagged by the ESLint `eslint-plugin-import`
-configuration. See [src/README.md](src/README.md) for the full layer contract.
+Breaking this rule is blocked at lint time by per-directory
+`no-restricted-imports` overrides in `eslint.config.mjs` — one for each layer
+boundary, covering both the `#/` alias form and the relative-path form. See
+[src/README.md](src/README.md) for the full layer contract and the rule
+definitions.
 
 ### Tailwind rules
 

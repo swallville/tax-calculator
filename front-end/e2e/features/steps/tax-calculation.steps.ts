@@ -59,7 +59,7 @@ When('I click the retry button', async () => {
 // --- Then (assertions) ---
 
 Then('I should see the empty state message', async () => {
-  await expect(calc.emptyStateById).toBeVisible();
+  await expect(calc.emptyState).toBeVisible();
 });
 
 Then('I should not see the tax breakdown', async () => {
@@ -93,18 +93,18 @@ Then(
 
 Then('the retry button should be {word}', async ({}, visibility: string) => {
   if (visibility === 'visible') {
-    await expect(calc.retryButtonById).toBeVisible();
+    await expect(calc.retryButton).toBeVisible();
   } else {
-    await expect(calc.retryButtonById).not.toBeVisible();
+    await expect(calc.retryButton).not.toBeVisible();
   }
 });
 
 Then('I should see the retry button', async () => {
-  await expect(calc.retryButtonById).toBeVisible();
+  await expect(calc.retryButton).toBeVisible();
 });
 
 Then('I should not see the retry button', async () => {
-  await expect(calc.retryButtonById).not.toBeVisible();
+  await expect(calc.retryButton).not.toBeVisible();
 });
 
 Then('I should see a salary validation error', async () => {

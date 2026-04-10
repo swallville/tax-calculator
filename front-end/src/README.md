@@ -46,13 +46,26 @@ Framework-agnostic building blocks with no domain knowledge. Sub-divided into
 | `entities` | `shared`                        |
 | `shared`   | nothing in `src/`               |
 
-All imports use the `#/` path alias, enforced by ESLint:
+All imports use the `#/` path alias:
 
 ```ts
 import { selectors } from '#/entities/tax-brackets';
 import { formatCurrency } from '#/shared/lib/format';
 import { apiClient } from '#/shared/api';
 ```
+
+The layer direction is enforced by `no-restricted-imports` per-directory
+overrides in `eslint.config.mjs`. Each rule blocks both the `#/` alias form and
+the relative-path form so no loophole exists:
+
+- `src/shared/**` cannot import from `#/entities/**`, `#/widgets/**`, or
+  `#/app/**`.
+- `src/entities/**` cannot import from `#/widgets/**` or `#/app/**`.
+- `src/widgets/**` cannot import from `#/app/**`.
+
+A violation produces a clear error message naming the offending layer. Import
+ordering within each file (external → parent → internal → sibling) is a
+separate rule (`import/order`).
 
 ## Layer READMEs
 
