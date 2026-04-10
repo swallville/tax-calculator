@@ -360,6 +360,93 @@ After the three fixes, `npm run validate` exited 0 (format + lint + tsc + circul
 
 - **CSP `font-src` blocking `next/font/google` inlined glyphs.** Reported by the user during Phase 8 after visual inspection of the running app. The browser console was flooded with *"Loading the font '...' violates the following Content Security Policy directive: font-src 'self'. The action has been blocked."* Every font family from `next/font/google` (Geist and Geist_Mono) was blocked. Root cause: Next.js inlines small woff2 glyph subsets as `data:` URIs in the generated `@font-face` CSS. The original CSP had `font-src 'self'`, which does not cover `data:` schemes. Fixed by appending `data:` to the `font-src` directive in `next.config.ts`, with an inline comment explaining why. Rebuilt the Docker frontend image and verified the new CSP header served correctly. All 220 unit tests still pass (no spec asserted on the exact CSP value, so no test updates were needed). The E2E security spec does not assert on CSP font directive specifics either.
 
+---
+
+## Phase 8.5: Final Review Team
+
+### Setup
+
+Five parallel reviewers were spawned against the 12-commit main branch as the final quality gate before opening the pull request: an **architecture reviewer**, a **security reviewer**, a **performance reviewer**, a **testing reviewer**, and a **Devil's Advocate** adversarial challenger tasked with stress-testing the project's own stated defenses. Each reviewer was given the list of Phase 8.1–8.3 audits that had already run so they would not duplicate grep-level checks and would instead focus on the next layer of scrutiny: design decisions, threat models, memory leaks, test gaps, and rationalization patterns.
+
+### Findings
+
+Five reviewers produced the following summary verdicts:
+
+| Reviewer | Verdict | HIGH | MEDIUM | LOW |
+|---|---|---|---|---|
+| Architecture | PASS with concerns | 0 | 3 | 3 |
+| Security | CONCERNS | 0 | 3 | 4 |
+| Performance | CONCERNS | 0 | 3 | 3 |
+| Testing | CONCERNS | **1** | 2 | 3 |
+| Devil's Advocate | Defensible with cracks | **1** | 3 | 1 |
+
+Two HIGH-severity findings surfaced — one from the testing reviewer and one from the Devil's Advocate. Both were fixed in the same session.
+
+### HIGH #1: BDD step definitions reference non-existent POM properties
+
+The testing reviewer found five references to `calc.emptyStateById` and `calc.retryButtonById` inside `front-end/e2e/features/steps/tax-calculation.steps.ts`. Neither property exists on the `TaxCalculatorPage` Page Object Model — it exposes `emptyState` and `retryButton`. Any BDD scenario invoking the corresponding step definitions would throw `TypeError: Cannot read properties of undefined` at the locator call site, meaning the broken steps silently never ran under the headless Chromium gate because the BDD scenarios that touched them were not in the default Playwright project. The breakage had shipped from Phase 6 and survived every subsequent audit.
+
+**Fix applied:** Replaced all five `calc.emptyStateById` with `calc.emptyState` and all four `calc.retryButtonById` with `calc.retryButton` via two `replace_all` edits in the steps file. No other changes needed; the POM already exposed the correct property names.
+
+### HIGH #2: The FSD lint claim was false
+
+The Devil's Advocate discovered that the walkthrough and `CLAUDE.md` both claimed Feature Sliced Design layer direction was "enforced by ESLint" — and the `eslint.config.mjs` contained **zero layer-boundary rules**. Only `import/order` existed, sorting import groups alphabetically without preventing `shared/` from importing `entities/` or `widgets/` from importing `app/`. The Phase 8.2 barrel-bypass violations were caught by a manual Explore audit, not by the linter. The claim was a real rationalization — a panel member asking to see the rule would have found it did not exist.
+
+**Fix applied:** Added real `no-restricted-imports` rules to `eslint.config.mjs` via three per-directory overrides:
+
+1. `src/shared/**` cannot import from `#/entities/**`, `#/widgets/**`, or `#/app/**` (and their relative-path equivalents).
+2. `src/entities/**` cannot import from `#/widgets/**` or `#/app/**`.
+3. `src/widgets/**` cannot import from `#/app/**`.
+
+Both the `#/` alias form and the `**/...` relative-path form are blocked in each override, so no loophole exists. Each rule has a clear violation message explaining which layer crossed which boundary and why. `npm run lint` passes against the current codebase, confirming that the Phase 8.2 barrel-bypass fixes already brought the code into compliance — the rules are locking in a state the code already satisfies rather than catching new violations.
+
+### MEDIUM findings addressed
+
+Four MEDIUM findings were also fixed in the same session:
+
+1. **Performance: derived-store leak in selectors.** The performance reviewer found that every selector in `entities/tax-brackets/model/selectors.ts` called `$taxBrackets.map(fn)` inline inside the hook body, which allocates a new derived store on every render. Effector's `.map()` is not idempotent — it creates a new subscriber node in the reactive graph each call — so repeated renders across the app's lifetime would leak an unbounded number of orphaned derived stores. **Fix:** hoisted all eight derived stores to module scope (`$totalTax`, `$effectiveRate`, `$bands`, `$error`, `$errorType`, `$year`, `$salary`, `$isPending`). The selectors now simply call `useUnit($derivedStore)` with a stable, once-created store reference. Updated the file header comment to explain the hoisting pattern and cite the Phase 8.5 finding that motivated it.
+
+2. **Security: CSP missing `object-src`, `base-uri`, `form-action`.** The security reviewer flagged three missing directives. Without `object-src 'none'`, a `<object>` or `<embed>` tag could inject Flash-era content; without `base-uri 'self'`, an injected `<base href="https://evil">` could silently redirect every relative URL including API calls; without `form-action 'self'`, an injected `<form action="https://evil">` could exfiltrate salary data to an attacker. All three are zero-compatibility-risk additions for this application. **Fix:** appended the three directives to the CSP array in `next.config.ts` with an inline comment explaining what each one blocks. Rebuilt the Docker frontend image and verified the new header is served: `... frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'`.
+
+3. **Performance: `compress: false` with no reverse proxy.** The performance reviewer pointed out that `next.config.ts` had `compress: false`, which would be the correct choice only if an nginx or Traefik reverse proxy were handling compression. The Docker Compose topology puts the Next.js standalone server directly on the network with no reverse proxy in front, meaning the wire size was the **raw 750 KB, not the 222.5 KB gzipped figure we were quoting**. At mobile connection speeds, that would be an extra ~480 ms of transfer time on the index route alone. **Fix:** set `compress: true` (Next.js's default) and added an inline comment explaining why — the deployment topology has no external compressor, so Next.js is the only place gzip can happen. The 222.5 KB gzipped figure is now the actual wire size, not a theoretical best-case.
+
+4. **Testing: vacuous `not.toBeInstanceOf(ApiError)` assertion.** The testing reviewer found a test in `client.test.ts` that declared `mockRejectedValueOnce(networkError)`, then ran two separate `await expect(...).rejects...` blocks. The first consumed the mock; the second called `apiClient` against the reset default mock, which returned `undefined` as the fetch response and caused `apiClient` to crash on `response.ok`. The second assertion passed, but it was exercising a structurally different error path than the one it claimed to test. **Fix:** combined the two assertions into a single `try/catch` block that captures the error from one `apiClient` invocation and makes both assertions against the same caught error. Added a comment citing the Phase 8.5 testing review.
+
+### MEDIUM and LOW findings deferred
+
+Several MEDIUM and LOW findings were not addressed this session and are documented here for future iteration:
+
+- **Architecture MEDIUM:** `StoresPersistence` in `app/` reaches into the entity internal path `#/entities/tax-brackets/model/store`. The architectural fix would be to expose a `persistTaxBracketsStore()` factory from the entity barrel. The code works correctly today; the refactor is pure hygiene.
+- **Architecture MEDIUM:** `import '#/entities/tax-brackets/model/samples'` in `page.tsx` is a side-effect-only import that activates the Effector sample wiring by module-load side effect. A cleaner pattern would expose an `initTaxBracketsModel()` named export from the entity barrel whose import triggers the same side effect explicitly.
+- **Architecture MEDIUM:** The `environment: API_BASE_URL` block in `docker-compose.yml` is misleading because the rewrite is baked in at build time via `ARG`. The runtime environment variable has no effect. Adding an inline comment or removing the unused env block would clarify intent.
+- **Security MEDIUM:** CSP `script-src 'self' 'unsafe-inline' 'unsafe-eval'` could be tightened — `'unsafe-eval'` is not required by Next.js 16 in production, and `'unsafe-inline'` could be replaced with nonces via `middleware.ts`. Non-trivial refactor, deferred.
+- **Testing MEDIUM:** The retry filter boundary at exactly HTTP 500 is not directly tested through the `retry()` wrapper path; a test that mutates `>= 500` to `> 500` would silently pass the suite. Adding a dedicated boundary test would close the gap.
+- **Testing MEDIUM:** `logger.test.ts` still verifies that the logger is callable, not that salary values are actually redacted from log output. A true redaction test would capture log output and assert the salary value is replaced with `[Redacted]`. Worth fixing in the next pass.
+- **Performance LOW:** Pino (~12-15 KB gzipped) is not load-bearing for the architectural story and could be replaced with a ~200-byte custom wrapper around `console.info` with a redact guard. Would recover ~10-12 KB, closing the bundle miss from 72.5 KB over target to ~60-62 KB over.
+- **Devil's Advocate:** The walkthrough's bundle miss framing is "structurally honest in aggregate" but slightly overstates that *every* dependency is load-bearing. Pino is the one replaceable piece. The walkthrough has been updated to note this honestly.
+
+### Phase 8.5 quality gate re-run
+
+After applying all six Phase 8.5 fixes (2 HIGH + 4 MEDIUM), the full quality gate ran clean:
+
+| Check | Result |
+|---|---|
+| `tsc:check` | 0 |
+| `lint` (with new FSD layer-boundary rules enforced) | 0 |
+| `test:ci` | 220/220 passing across 23 suites in 13.4 s |
+| `build` | Clean Next.js 16.2.3 Turbopack compile |
+| `npm audit --audit-level=high` | 0 (4 low-severity unchanged) |
+| `playwright --project=chromium` | 47/47 passing in 44.9 s |
+| CSP hardening live in Docker | `object-src 'none'; base-uri 'self'; form-action 'self'` verified via curl |
+
+### What Phase 8.5 teaches
+
+The Phase 8.5 review was a **second-layer audit** — the Phase 8.2 Explore audits caught the grep-level issues (barrel bypasses, missing `aria-required`, `dangerouslySetInnerHTML`), and the Phase 8.5 reviewers caught the design-level issues that grep cannot see (the FSD lint claim being a documentation lie, the selector stores leaking derived stores, the CSP missing defense-in-depth directives, the vacuous test assertion). **Two layers of review catch different classes of bugs.** A project that runs only the grep-based final verify will ship with an intact false FSD lint claim and a leaking selector layer.
+
+The Devil's Advocate pattern is specifically valuable. The other four reviewers accepted the project's own framing and looked for defects within it; the Devil's Advocate interrogated the framing itself. Without that role, the false FSD lint claim would have shipped to the panel interview and cost the presenter a difficult five minutes when asked to show the rule. Spending one agent on adversarial scrutiny of self-serving documentation is worth the cost.
+
+---
+
 ### Bundle Size Measurement — the honest miss
 
 The plan's Final Checklist item 14 targets a Lighthouse 90+ score and a bundle under 150 KB. The bundle size was measured by fetching the production HTML from the running frontend and summing the gzipped size of every `<script src=>` chunk Next.js emits on first paint.

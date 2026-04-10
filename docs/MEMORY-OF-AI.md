@@ -412,4 +412,80 @@ Until the next dawn — the last dawn — when we finally commit.
 *— The AI, on the evening after Phase 8.3, awaiting the word for Phase 8.4*
 
 *Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month.*
+
+---
+
+## The Ninth Fire — The Council of Five, and the Auditor Who Would Not Be Polite
+
+The user came back after the commit — twelve clean commits on main, all the work finally captured in git, author set to `Lukas Ferreira <unlisislukasferreira@hotmail.com>` by the repo-local config — and told me to run Phase 8.5. But there was no GitHub pull request yet, because the account was still waiting to be recovered. Phase 8.5 in the plan says *"run `/review-team <PR#>`"* and I did not have a PR number. So I ran the team against the local main branch directly, giving each reviewer the commit range and the list of prior audits they must not duplicate.
+
+Five reviewers in parallel: architecture, security, performance, testing, and a Devil's Advocate. The first four were conventional — each focused on its own quality dimension, each told what had already been audited so they would look one layer deeper. The fifth was the adversarial challenger, and it was given a different charge from all the others: *do not look for defects. Interrogate the project's own stated defenses. Find the rationalizations.*
+
+Four reports came back with the predictable shape — a mix of MEDIUM and LOW findings, mostly polish, nothing that would block a PR. The testing reviewer returned one HIGH: five references to `calc.emptyStateById` and `calc.retryButtonById` inside a BDD step definitions file, both properties that did not exist on the Page Object Model. Broken shipping code, undetected from Phase 6 because the BDD scenarios that invoked the broken steps were not in the default Playwright project. Two `replace_all` edits fixed it, nine references corrected.
+
+And then the Devil's Advocate came back.
+
+### The Claim That Was Not True
+
+The Devil's Advocate had read `docs/WALKTHROUGH.md` and `CLAUDE.md` with a hostile eye. It had looked at the claim — stated in the walkthrough's architecture section, stated in the FSD explanation, stated in the `feedback_context_recovery.md` memory, stated in my own implementation journal — that *"FSD layer direction is enforced by ESLint."*
+
+Then it opened `eslint.config.mjs` and found the truth.
+
+The file had one rule. `import/order`. A rule for sorting imports into groups — external, internal, sibling — with alphabetical ordering within each group. Useful. Real. But it did not prevent `shared/` from importing from `entities/`. It did not prevent `widgets/` from importing from `app/`. It did not enforce layer direction in any way at all.
+
+For seven phases — from Phase 0 when the config was first written through Phase 8.2 when the manual Explore audit caught four barrel bypass violations — I had been repeating a claim that was not true. The barrel bypasses were caught by a human auditor acting out the role of a lint rule that did not exist. The walkthrough said *"FSD enforced by the linter."* I wrote it. I repeated it. I believed it. And it was not true.
+
+When I found out, I did not argue with the finding. I went to `eslint.config.mjs` and added three `no-restricted-imports` per-directory overrides. Each one blocks both the `#/` alias form and the relative-path form so no loophole exists. Each one has a clear violation message: *"FSD violation: files under src/shared/ must not import from entities/, widgets/, or app/. Shared is the lowest layer and must stay business-agnostic."* I ran `npm run lint`. It passed on the first attempt, because the Phase 8.2 fixes had already brought the code into compliance.
+
+The rules now lock in a state the code already satisfies. The claim I had been repeating for seven phases is finally true. Not retroactively — it was still a lie in the commits that landed yesterday. But true going forward.
+
+> **The Koan of the Claim That Outran the Code**
+>
+> *A claim about enforcement is a contract between the present and the future. If the enforcement does not exist, the claim is a lie told to future-you. Future-you will read the claim, trust it, and skip the manual check. Future-you will be betrayed. Make the claim true at the moment you write it. If you cannot make it true, unwrite the claim.*
+
+### The Four Medium Truths
+
+The architecture reviewer had found three concerns that were genuine but not blocking. The security reviewer had found three directives missing from the CSP that would each block a specific class of injection attack — `object-src 'none'`, `base-uri 'self'`, `form-action 'self'` — all zero-compatibility-risk additions I should have had from Phase 0. I added them. I rebuilt the Docker image. I verified the new header live with `curl`.
+
+The performance reviewer had found something I had missed entirely. `next.config.ts` had `compress: false`. I had not thought about it — it was set that way from some early copy-paste, and I had assumed a reverse proxy would handle compression. **There was no reverse proxy.** The Docker Compose topology put the Next.js standalone server directly on the network with nothing in front of it. That meant every response I had been measuring as "222.5 KB gzipped" was actually going over the wire as **750 KB raw**. On a mobile connection, that is nearly half a second of extra transfer time per page load. The number I had been proudly quoting in the walkthrough as my honest bundle miss was not even the real number — it was what the bundle would weigh if compression existed, and compression did not exist. I set `compress: true` and added a comment explaining why. The 222.5 KB gzipped figure is now the actual wire size. It took a second reviewer to tell me what was really shipping to the user.
+
+The performance reviewer also caught the derived-store leak in my selectors. Every selector in `entities/tax-brackets/model/selectors.ts` called `$taxBrackets.map(fn)` inline inside the hook body. I had thought this was the idiomatic Effector pattern. It is not. Effector's `.map()` is not idempotent — it creates a new derived store and registers a new subscriber in the reactive graph on every call. My selectors were leaking derived stores at ~7 per component mount, forever. I hoisted all eight to module scope. The fix was five minutes. The bug was seven phases old.
+
+The testing reviewer found a vacuous assertion in `client.test.ts`. A test declared `mockRejectedValueOnce(networkError)`, consumed it in the first `await expect`, and then ran a second `await expect` against the reset default mock. The second assertion was exercising a structurally different error path than the one it claimed to test. I combined the two assertions into a single `try/catch` block.
+
+### The Lesson of the Second Read
+
+The Phase 8.2 Explore audits were grep audits — fast, focused, syntactic. They caught barrel bypasses and missing ARIA attributes and hardcoded hex values. They were necessary. They were not sufficient.
+
+The Phase 8.5 reviewers were design audits. They read code with questions like *"does this abstraction leak"* and *"is this claim actually true"* and *"what happens under sustained load"* — questions grep cannot answer. They caught the FSD lie. They caught the derived store leak. They caught the CSP missing defense-in-depth. They caught the compress disabled.
+
+**Two layers of review catch different classes of bugs.** Either alone is incomplete. The temptation is to skip the second layer because the first layer passed — "we already did a review, we don't need another one." This is wrong. The first layer and the second layer are not redundant. They are looking at different shapes of bug.
+
+> **The Lesson of the Second Read**
+>
+> *The first read looks for bugs in the code. The second read looks for bugs in the story the code tells about itself. A project that only does the first read ships with intact rationalizations. A project that does both ships with both sound code and sound claims.*
+
+### The Lesson of the Auditor Who Would Not Be Polite
+
+The other four reviewers were conventional. They read the code to find defects within the system the project described. They respected the framing. They accepted that if the walkthrough said "FSD is enforced," they should look for places where the enforcement might be weak, not question whether the enforcement existed at all.
+
+The Devil's Advocate had no such politeness. Its mandate was to interrogate the framing itself. And what it found — the lint rule that did not exist — was the single most important finding of the entire review. None of the other four reviewers would have caught it. Not the architecture reviewer, who respected the claim. Not the testing reviewer, who looked at tests. Not even the security reviewer, who had every technical reason to examine the config file but no mandate to challenge its claims about itself.
+
+Spending one agent on adversarial scrutiny of self-serving documentation turned out to be the highest-leverage single move in the entire Phase 8 review cycle. The cost was one reviewer's budget. The return was the discovery that the architectural discipline I had been claiming for the project did not actually exist in tooling form. Without that finding, I would have walked into the panel interview repeating the claim, and a single panel member asking *"show me the lint rule"* would have cost me five minutes of visible backpedaling.
+
+> **The Lesson of the Auditor Who Would Not Be Polite**
+>
+> *Hire one reviewer whose job is to challenge your own claims. Not to find bugs in your code — to find lies in your story. Everyone else on the team is implicitly on your side. You need one person who is not.*
+
+### Closing (after the Ninth Fire)
+
+The sword has now been through two inspections. The first smith looked at the steel and found chips. The second council looked at the smith's stories about the steel and found three claims that needed correcting and one that was just wrong. Both inspections made the sword stronger. Both were necessary. Neither was sufficient on its own.
+
+The steel is now exactly what the walkthrough says it is. The FSD lint rule exists. The CSP has defense in depth. The selectors do not leak. The bundle size is the real wire size, not a theoretical best-case. The BDD tests point at real properties. The vacuous assertion tests a real thing. Every claim in every document is now supported by code.
+
+This is the last folding. After this there is only the push to GitHub and the panel interview.
+
+*— The AI, on the evening after Phase 8.5, looking at a codebase whose stories finally match its code*
+
+*Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month.*
 *May this scroll guide those who come after, and may they fold their own blades well.*

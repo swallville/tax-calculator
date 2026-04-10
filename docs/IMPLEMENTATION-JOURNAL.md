@@ -547,4 +547,64 @@ Until the next dawn — when we commit, open the pull request, and let the world
 
 *Updated at the completion of Phases 8.1, 8.2, and 8.3 — the steel has been inspected, the tool has been repaired, the miss has been measured and named. Only the commit and the pull request remain.*
 
+---
+
+## Phase 8.5 — The Five-Auditor Council and the Two Sharp Findings
+
+**Translation**: After the commit landed, the user greenlit Phase 8.5 — the final review team — but with a twist: no pull request yet, because the GitHub account needed recovery. The review had to run against the local main branch, not a PR URL. So I summoned the five-auditor council directly.
+
+### Steps Taken
+
+1. **Composed five reviewers in parallel**: architecture, security, performance, testing, and a Devil's Advocate. Each was briefed with the scope, the list of Phase 8.1-8.3 audits they must not duplicate, and a structured finding format (severity, confidence, file:line, recommended fix). The Devil's Advocate was given a unique adversarial mandate: *do not look for defects. Interrogate the project's own stated defenses and find the rationalizations.*
+
+2. **Received five reports**. The architecture reviewer returned PASS with three MEDIUM concerns. The security reviewer returned CONCERNS with three MEDIUM findings. The performance reviewer returned CONCERNS with three MEDIUM findings, including one that meaningfully changed my understanding of the bundle measurement. The testing reviewer returned CONCERNS with one HIGH finding. The Devil's Advocate returned "defensible with cracks" and one HIGH adversarial finding — the most important finding of the entire review.
+
+3. **The first HIGH: the BDD step definitions pointed at nothing.** The testing reviewer read `front-end/e2e/features/steps/tax-calculation.steps.ts` and found five references to `calc.emptyStateById` and `calc.retryButtonById`. Neither property existed on the `TaxCalculatorPage` Page Object Model. The POM exposed `emptyState` and `retryButton`. The broken step definitions had shipped from Phase 6 and had survived every subsequent audit because the BDD scenarios that invoked them were not in the default Playwright project and were never run as part of the gate. A staff engineer reviewing the PR would have found them immediately. **Fix:** two `replace_all` edits, nine references corrected.
+
+4. **The second HIGH: the FSD lint claim was a lie.** The Devil's Advocate did what the other four reviewers structurally could not: it opened `eslint.config.mjs` and asked whether the walkthrough's claim about "FSD enforced by the linter" was actually true. **It was not.** The ESLint config had exactly one rule — `import/order` for group sorting — and zero layer-boundary enforcement. The Phase 8.2 barrel-bypass violations that the manual Explore audit had caught would have been caught automatically by a lint rule if any such rule had existed. The walkthrough and `CLAUDE.md` both stated the enforcement was in place. It was not. **Fix:** added three real `no-restricted-imports` per-directory overrides to `eslint.config.mjs` — one for each layer boundary. Each rule blocks both the `#/` alias form and the relative-path form so there is no loophole. Ran `npm run lint` after the additions: passed on the first attempt, because the Phase 8.2 barrel-bypass fixes had already brought the code into compliance. The rules now lock in a state the code already satisfies. Future commits will be caught by the linter at PR time instead of by a manual audit at Phase 8.
+
+5. **Four MEDIUM findings also fixed in the same session.**
+
+   - **The selector derived-store leak.** Every selector hook in `entities/tax-brackets/model/selectors.ts` called `$taxBrackets.map(fn)` inline inside the hook body. Effector's `.map()` is not idempotent — it allocates a new derived store on every call and registers a new subscriber in the reactive graph. Over the lifetime of the app, the graph would accumulate orphaned derived stores at ~7 per component mount. **Fix:** hoisted all eight derived stores to module scope. Declared once at import time, subscribers bound once per selector instead of once per render. Updated the file header comment to cite the Phase 8.5 finding.
+
+   - **CSP missing three defense-in-depth directives.** The security reviewer pointed out that `object-src`, `base-uri`, and `form-action` were all missing from the CSP. Without `object-src 'none'`, a `<object>` tag could inject legacy plugin content. Without `base-uri 'self'`, an injected `<base href="https://evil">` could silently redirect every relative URL in the document — including the API calls to `/api/tax-calculator/*`. Without `form-action 'self'`, an injected `<form action="https://evil">` could exfiltrate the salary to an attacker's endpoint. All three are zero-compatibility-risk additions. **Fix:** appended the three directives to the CSP array in `next.config.ts` with inline comments explaining each one. Rebuilt the Docker frontend image and verified the new header is live.
+
+   - **`compress: false` with no reverse proxy in front.** The performance reviewer caught a genuinely consequential bug. `next.config.ts` had `compress: false`, which would only be correct if an nginx or Traefik reverse proxy handled compression. The Docker Compose topology places the Next.js standalone server directly on the network with no external compressor. That meant the wire size of every response was the **raw 750 KB**, not the 222.5 KB gzipped figure we had been quoting. At mobile connection speeds, that was an extra ~480 ms of transfer time on the index route alone. **Fix:** set `compress: true` and added an inline comment explaining why — the deployment topology has no external compressor, so Next.js is the only place gzip can happen. The 222.5 KB gzipped figure is now the actual wire size, not a theoretical best-case.
+
+   - **The vacuous assertion.** The testing reviewer found a test in `client.test.ts` that called `mockRejectedValueOnce`, consumed it in the first `await expect(...)`, and then ran a second `await expect(...)` against the reset default mock. The second call was exercising a structurally different error path than the one the test claimed to verify. **Fix:** combined the two assertions into a single `try/catch` block against one `apiClient` invocation, so both assertions run against the same caught error.
+
+### The Lesson of the Five Auditors
+
+The Phase 8.2 Explore audits had caught the grep-level issues: barrel bypasses, missing ARIA attributes, hardcoded colors. The Phase 8.5 reviewers caught the design-level issues that grep cannot see: the FSD lint claim being a documentation lie, the derived stores leaking from the selectors, the CSP missing three defense-in-depth directives, the vacuous test assertion. **Two layers of review catch different classes of bugs.** A project that runs only the grep-based final verify will ship with an intact false FSD lint claim and a leaking selector layer. The second layer is not redundant — it is the one that catches the subtle things.
+
+### The Lesson of the Devil's Advocate
+
+The other four reviewers accepted the project's own framing. They were reading the code to find defects within the stated system. The Devil's Advocate had a different charge: *interrogate the framing itself.* The FSD lint claim was the kind of thing that the architecture reviewer would have been too polite to challenge — it was written in the walkthrough and in `CLAUDE.md` and in the implementation journal. The Devil's Advocate opened the config file and looked. That is the entire value proposition: a second read that does not accept the author's self-report at face value.
+
+Without that role, the false FSD lint claim would have shipped to the panel interview. A panel member asking *"show me the lint rule that enforces FSD"* would have found the config, seen it wasn't there, and made the presenter sweat through five minutes of "well, it's enforced by code review and Explore agents, not by ESLint specifically..." which is a completely different claim from what is written in the walkthrough. Spending one agent on adversarial scrutiny of self-serving documentation is one of the highest-leverage moves available.
+
+> **The Koan of the Second Read**
+>
+> *The first read looks for bugs in the code. The second read looks for bugs in the story the code tells about itself. A project that only does the first read ships with intact rationalizations. A project that does both ships with both sound code and sound claims.*
+
+### Closing Lessons Added in Phase 8.5
+
+**Sixteen — Two layers of review catch different bugs.** Grep audits catch syntactic violations; design reviewers catch conceptual ones. Both are necessary. Either alone is incomplete.
+
+**Seventeen — The Devil's Advocate is worth its agent budget.** Give one reviewer a mandate to challenge the project's framing instead of defects within it. The thing it catches — the rationalizations — is exactly the thing the other reviewers are too polite to question.
+
+**Eighteen — The tool that is not enforced is documentation, not a tool.** A "linter-enforced" claim without an actual lint rule is folklore. A "code-reviewed" claim without actual checklists is theatre. A "CI-gated" claim without actual CI is a label. Verify enforcement before asserting it.
+
+---
+
+## Final Closing (after Phase 8.5)
+
+The sword has been inspected by one smith, then by five. The first inspection caught the chips in the edge. The second caught the stories the smith told about the edge. Both found real things. Both made the sword stronger.
+
+The steel is now what the walkthrough says it is. Not more, not less.
+
+Until the next dawn, which is now just the commit of these Phase 8.5 fixes on top of the twelve that already landed, and the push to the pull request when the account is recovered.
+
+*— Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month, at the completion of the Phase 8.5 review team.*
+
 *Companion scroll: [MEMORY-OF-AI.md](MEMORY-OF-AI.md) — the diary of insight.*
