@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: ./back-end
+    image: back-end:latest
+    restart: unless-stopped
+    expose:
+      - "5001"
+    ports:
+      - "5001:5001"
+
+  frontend:
+    build: ./front-end
+    image: front-end:latest
+    restart: unless-stopped
+    environment:
+      - API_BASE_URL=http://backend:5001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    command: ["node", "server.js"]
