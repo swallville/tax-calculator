@@ -54,7 +54,7 @@ sample({
 
 // Step 3 — surface a user-friendly error when the query fails.
 // `mapError` translates raw API errors into the structured `ErrorType` the
-// store and UI expect. Centralising this here keeps error-handling logic out
+// store and UI expect. Centralizing this here keeps error-handling logic out
 // of both the effect and the store.
 sample({
   clock: taxBracketsQuery.finished.failure,
