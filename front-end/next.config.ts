@@ -4,7 +4,13 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
-  compress: false,
+  // Next.js gzips responses at the server layer by default. Keeping this
+  // enabled because the Docker Compose topology places the Next.js standalone
+  // server directly on the network with no reverse proxy (nginx, Traefik) in
+  // front. Disabling compression would push the wire size from ~222 KB
+  // (gzipped) to ~750 KB (raw). Identified during the Phase 8.5 performance
+  // review — the previous `compress: false` value assumed an external proxy.
+  compress: true,
   images: { unoptimized: true },
   experimental: {
     inlineCss: true,
@@ -37,6 +43,14 @@ const nextConfig: NextConfig = {
               "font-src 'self' data:",
               "connect-src 'self'",
               "frame-ancestors 'none'",
+              // Additional hardening directives added in Phase 8.5 after the
+              // security review. Each blocks a specific injection class:
+              //   object-src 'none'   — defeats <object>/<embed>/<applet> plugin injection
+              //   base-uri 'self'     — stops <base href="https://evil"> from redirecting relative URLs
+              //   form-action 'self'  — prevents injected <form action="https://evil"> from exfiltrating data
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
             ].join('; '),
           },
           {

@@ -66,13 +66,19 @@ describe('apiClient', () => {
       const networkError = new TypeError('Failed to fetch');
       (global.fetch as jest.Mock).mockRejectedValueOnce(networkError);
 
-      await expect(
-        apiClient({ url: '/api/tax-calculator/tax-year/2022' }),
-      ).rejects.toThrow(TypeError);
-
-      await expect(
-        apiClient({ url: '/api/tax-calculator/tax-year/2022' }),
-      ).rejects.not.toBeInstanceOf(ApiError);
+      // Both assertions must run against the SAME rejected promise — the
+      // previous version used two separate await expect blocks that consumed
+      // only the first mockRejectedValueOnce, leaving the second call to hit
+      // the reset default mock and throw a structurally-different error.
+      // Caught by the Phase 8.5 testing review.
+      let thrown: unknown;
+      try {
+        await apiClient({ url: '/api/tax-calculator/tax-year/2022' });
+      } catch (err) {
+        thrown = err;
+      }
+      expect(thrown).toBeInstanceOf(TypeError);
+      expect(thrown).not.toBeInstanceOf(ApiError);
     });
 
     it('propagates the original error instance on network failure, not a new one', async () => {
