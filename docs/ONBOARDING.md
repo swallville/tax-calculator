@@ -453,6 +453,14 @@ Four browser projects run against every spec: `chromium`, `firefox`, `webkit`, a
 - Node.js 20+ (check with `node --version`)
 - npm 10+ (comes with Node 20)
 - Docker Desktop (for the backend and E2E tests)
+- Git (for cloning the repository)
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/swallville/tax-calculator.git
+cd tax-calculator
+```
 
 ### Run Locally (frontend + backend both running)
 

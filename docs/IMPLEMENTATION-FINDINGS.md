@@ -559,3 +559,32 @@ Tried dynamic-importing `LoadingState`, `ErrorState`, and `TaxBreakdown` via `ne
 - **Run `npm run validate` in the 7-step development cycle** in `.claude/WORKFLOW.md`, not just the individual checks from the quality gate. The validate script chains differently and exposes format/lint-fix interactions that the individual commands miss.
 
 ---
+
+### Phase 8.7: GitHub publish, documentation reorganization, history rewrite
+
+After Phase 8.6 closed the deferred items, the user's GitHub account was recovered and the repository `swallville/tax-calculator` was created as an empty remote. Three concerns had to be addressed in sequence before the local `main` could go public: wire the remote and push, reshape the documentation layout so GitHub visitors land on a useful README, and rewrite history to remove the `Co-Authored-By: Claude` trailers that would have read as unanswered questions to a stranger reading the log.
+
+#### FIXED — Remote wired and history pushed
+
+`git remote add origin https://github.com/swallville/tax-calculator.git` followed by `git push -u origin main`. All twenty-three commits landed on the first attempt, with the repo-local author config from Phase 8.4 (`Lukas Ferreira <unlisislukasferreira@hotmail.com>`) attributing every commit to the intended person. No author-rewrite was required at push time because the author wiring had been done correctly three phases earlier.
+
+#### FIXED — Root README as GitHub landing page
+
+Previously the only rich README lived at `front-end/README.md`. On GitHub, visitors landing on `github.com/swallville/tax-calculator` would have seen no README because GitHub only renders the root-level one. Created a new `README.md` at the repository root as the GitHub landing page — elevator pitch, architecture overview, quick start, links into `docs/`, screenshots from `docs/media/`. Demoted `front-end/README.md` to a concise navigation stub that points visitors back up to the root README and across to the documentation suite. Added `docs/diagrams/frontend-architecture.md` to complete the visual documentation suite. Ran one final Prettier pass on the reorganized files that had never been touched by the formatter since before the Phase 8.3 `prettier.config.ts` repair.
+
+#### FIXED — Commit history rewrite to strip `Co-Authored-By: Claude` trailers
+
+Twenty of the twenty-three commits on `main` carried a `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>` trailer added by the git-commit-helper agent during Phase 8.4–8.6. On a private branch the trailer was a fine honesty convention. On a public repo about to be read by strangers, it would have raised questions the log cannot answer on its own.
+
+Before running any filter command, created `backup/pre-coauthor-strip` pointing at the current HEAD as an insurance branch. Ran `git filter-branch --msg-filter` with a `sed` expression that stripped the trailer line and the preceding blank line from every commit message across the twenty-three-commit range. Verified the result with `git log | grep -c "Co-Authored-By"` — zero on `main`, twenty on the backup branch. Force-pushed to `origin/main` with `--force-with-lease` (the safer variant that checks the remote ref has not changed since the last fetch and refuses the push otherwise).
+
+The rewrite changed every SHA downstream of the first rewritten commit, which is the whole point of `filter-branch` — it is not a message edit, it is a full history replacement. The backup branch preserves the original twenty trailers for recovery scenarios, and remains on the local clone indefinitely.
+
+#### Lessons from the Eleventh Fire
+
+- **Directory structure is audience-dependent.** A private dev-tooling layout is not the same as a public showcase layout. The cost of reorganizing at the moment of publication is smaller than the cost of publishing with the wrong layout and explaining later why the landing page is empty.
+- **Always create a backup branch before a destructive git operation.** `git filter-branch` touches every commit downstream of the filter and every SHA changes. A backup branch costs one branch name and saves the entire history if the rewrite goes sideways.
+- **`--force-with-lease` is the default force-push from now on.** On a repository that only one person touches, `--force` and `--force-with-lease` are behaviorally equivalent. On any shared repo, `--force-with-lease` is the difference between "I can safely rewrite my own branch" and "I can accidentally erase a colleague's work."
+- **Set the author config at the earliest possible phase.** The Phase 8.4 `git config user.email` override was three phases early but saved a much more painful author rewrite at push time. Wiring metadata correctly once up front beats rewriting it later.
+
+---

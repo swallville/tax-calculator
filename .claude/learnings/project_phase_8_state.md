@@ -1,61 +1,57 @@
 ---
-name: phase-8-is-all-that-remains
-description: Project state as of 2026-04-10 — phases 0–7+++ DONE, only Phase 8 (commit + open PR) remains, nothing committed yet
+name: phase-8-complete-and-published
+description: Project state as of 2026-04-10 — all phases 0–8.7 DONE, repo published to GitHub swallville/tax-calculator, Co-Authored-By trailers stripped from history
 type: project
 ---
 
-**All implementation work is finished. Phases 8.1, 8.2, and 8.3 are now ALSO complete. The only thing left on `IMPLEMENTATION-PLAN.md` is Phase 8.4 (commit + PR) and Phase 8.5 (`/review-team` on the opened PR).**
+**All implementation work is finished and public.** Phases 0–7+++, 8.1–8.6, and 8.7 are all DONE on `main` at `https://github.com/swallville/tax-calculator`. The only remaining obligation on `IMPLEMENTATION-PLAN.md` is the panel interview itself, which is not a coding task.
 
-The repo has exactly one commit on `main`: `294c292 Initial commit from Create Next App`. Every phase 0–7+++ worth of work plus today's Phase 8.1–8.3 work is sitting uncommitted in the working tree, ready to commit.
+**Why:** The user asked "what's missing?" across multiple sessions through Phase 8.6 and the answer was always "one more thing." After Phase 8.6 the answer became "nothing on the technical plan — the repo is public, the history is clean, every document has been updated to reflect the Phase 8.7 publish."
 
-**Why:** Both `IMPLEMENTATION-JOURNAL.md` and `MEMORY-OF-AI.md` were explicitly dated *"on the night before Phase 8.4"* and both close with the line *"Until the next dawn — when we commit, open the pull request, and let the world see what we have made."* Phase 8.4 in the plan is gated with **STOP — await user approval** before running the `git-commit-helper` agent and opening the PR.
+**How to apply:** When the user asks "what's missing / what's next" in this project now, the answer is one line: "Nothing on the implementation plan — the repo is shipped and public. Next step is the panel interview itself." Do not invent follow-up tasks unless the user explicitly requests a new scope.
 
-**How to apply:** When the user asks "what's missing / what's next" in this project, the answer is one line: "Phase 8.4 — commit the work and open the pull request." Phases 0–7+++ are DONE in the Execution Status table at `docs/IMPLEMENTATION-PLAN.md:1088`, and Phases 8.1–8.3 have new rows added showing completion on 2026-04-10. Do not list sub-steps unless the user asks for them.
+### Phase 8.4 — DONE (2026-04-10)
 
-### Phase 8.1 (DONE — 2026-04-10)
+Twelve grouped Conventional Commits landed on local `main` via `git-commit-helper`. Repo-local author set to `Lukas Ferreira <unlisislukasferreira@hotmail.com>`. Branch stayed local; no push yet because GitHub access was still being recovered.
 
-All seven checks passed on first attempt: tsc, lint, analyse:circular, test:ci (220/220), build, npm audit, playwright chromium (47/47).
+### Phase 8.5 — DONE (2026-04-10)
 
-### Phase 8.2 (DONE — 2026-04-10)
+Five-agent review team (architecture / security / performance / testing / Devil's Advocate) ran against local `main` instead of a PR URL. 2 HIGH fixes: broken BDD step definition POM references (`calc.emptyStateById` / `calc.retryButtonById` did not exist); FSD lint claim was a documentation lie (`eslint.config.mjs` had zero layer-boundary rules — fixed by adding three `no-restricted-imports` per-directory overrides). 4 MEDIUM fixes: selector derived-store leak (hoisted eight stores to module scope), CSP defense-in-depth (`object-src 'none'`, `base-uri 'self'`, `form-action 'self'`), `compress: true` (deployment has no reverse proxy), vacuous `not.toBeInstanceOf` assertion in client.test.ts.
 
-Four parallel Explore audits (FSD / security / a11y / Tailwind). Findings and fixes:
+### Phase 8.6 — DONE (2026-04-10)
 
-- **FSD: 4 barrel bypasses fixed.** `errorMapping.ts`, `state-consistency.test.ts`, `entities/tax-brackets/types.ts`, and `TaxBreakdown.test.tsx` all reached into `#/shared/api/client` or `#/shared/lib/tax/types` instead of the barrels `#/shared/api` and `#/shared/lib/tax`. All fixed by rewriting imports to go through the public barrel.
-- **Security: 1 non-vulnerability.** `layout.tsx` used `dangerouslySetInnerHTML` for static JSON-LD structured data — no user input, no XSS vector. Refactored to drop the redundant `next/script` wrapper, use a plain `<script type="application/ld+json">` element, and added a comment citing the Next.js App Router JSON-LD docs.
-- **A11y: 2 fixes.** Added `aria-required="true"` to `YearSelect.tsx` (salary had it, year did not). Added explicit `focus-visible:*` utilities to `CalculateButton.tsx` (was relying solely on the global `*:focus-visible` rule).
-- **Tailwind: clean pass.**
+All seven deferred items from Phase 8.5 addressed. Architectural cleanups for `StoresPersistence` (new `persistTaxBracketsStore()` factory), `samples.ts` side-effect import (moved to entity barrel), `docker-compose.yml` (runtime env replaced with `build.args`). Two test improvements: retry filter boundary test, true logger redaction test. Pino → custom 60-line logger at `front-end/src/shared/lib/logger/logger.ts` (~4 KB gzipped savings; mid-pass 101 KB "savings" was a partial-response measurement error caught by a clean rebuild). CSP nonce migration attempted with passing Playwright suite, then reverted after measuring 97 KB static-prerender cost for zero real-threat gain on a public unauthenticated calculator.
 
-### Phase 8.3 (DONE — 2026-04-10)
+**Final bundle: 218 KB gzipped, 68 KB over the 150 KB plan target.** Structurally defensible, measured correctly, documented honestly in walkthrough/findings/journal.
 
-`npm run validate` failed twice before passing, exposing two latent issues:
+### Phase 8.7 — DONE (2026-04-10)
 
-1. **No `.prettierignore`** — the `**/*.js` glob was catching `.next/build/chunks/*.js` from the 8.1 build step. Created a comprehensive `.prettierignore`.
-2. **`prettier.config.ts` had `import { Config }`** which Prettier 3 rejects because `Config` is a type-only export. Changed to `import type { Config }`. **This had been broken since Prettier 3 was installed in Phase 0.** The formatter had been silently dead for seven phases. See `feedback_prettier_config_gotcha.md`.
-3. After fixing the config, Prettier flagged **67 files** of accumulated format drift (whitespace only, no semantic changes). Ran `npm run format`. All 220 tests still passed.
-4. Strengthened `state-consistency.test.ts` by using the previously-unused `year2022State` variable in two new assertions.
+GitHub account recovered, `swallville/tax-calculator` created as empty remote. `git remote add origin` + `git push -u origin main` pushed all 23 commits on first attempt with the Phase 8.4 author config carrying through.
 
-### Bundle measurement (DONE — Phase 8.3, honest miss)
+**Root README promoted:** Previously the only rich README lived at `front-end/README.md`, which GitHub does not render as the repo landing page. Created a new root `README.md` as the public landing page (pitch + architecture + quick start + links into `docs/`) and demoted `front-end/README.md` to a concise navigation stub. Added `docs/diagrams/frontend-architecture.md` to complete the visual documentation suite.
 
-**First-load JS: 218 KB gzipped across 9 chunks as of Phase 8.6 final. Target: 150 KB. Over by 68 KB.** (Phase 8.3 originally measured 222.5 KB; Phase 8.6 removed Pino in favor of a custom 60-line console wrapper, saving ~4 KB.)
+**History rewrite:** 20 of 23 commits carried a `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>` trailer from the git-commit-helper agent. Created `backup/pre-coauthor-strip` before running any filter command, then used `git filter-branch --msg-filter` with a `sed` expression to strip the trailer and preceding blank line from every commit message. Verified zero trailers on `main`, twenty on the backup. Force-pushed to `origin/main` with `--force-with-lease` (the safer variant that refuses the push if the remote ref changed since last fetch).
 
-Structural miss, not negligence. Baseline for React 19 + Next 16 + Effector + @farfetched + Zod + Pino is ~180 KB before any app code. See `reference_bundle_size_reality.md` for the full breakdown.
+**Applied Prettier** to previously-unformatted config and script files surfaced by the reorganization. Final working tree clean.
 
-Tried dynamic-importing the conditional widgets → **0 KB delta** because Next.js App Router prefetches dynamic chunks on first paint via the RSC payload. Reverted. See `feedback_measure_before_optimizing.md`.
+### Repository state as of end of 2026-04-10
 
-### Phase 8.4 plan (awaiting user greenlight)
+- Remote: `https://github.com/swallville/tax-calculator.git` (origin)
+- Branch: `main`, public, 23+ commits, author `Lukas Ferreira <unlisislukasferreira@hotmail.com>`
+- Backup: `backup/pre-coauthor-strip` (local only, preserves original 20 `Co-Authored-By` trailers for recovery)
+- Bundle: 218 KB gzipped (68 KB over 150 KB target — documented)
+- Tests: 227 unit + 47 Chromium E2E + 187 cross-browser E2E (Chromium + Firefox + WebKit + Mobile Chrome)
+- Docs: ROOT `README.md`, 4 load-bearing scrolls under `docs/` (PLAN + FINDINGS + JOURNAL + MEMORY-OF-AI), plus WALKTHROUGH + ONBOARDING + ARCHITECTURE + DESIGN-SYSTEM-GUIDE + ROUTES + FSD-GUIDE + ACCESSIBILITY + 6 Mermaid diagrams under `docs/diagrams/`
+- GitHub: repo is public; a visitor landing on `github.com/swallville/tax-calculator` sees the root README as the landing page
 
-1. `git config user.email "unlisislukasferreira@hotmail.com"` (repo-local)
-2. `git config user.name "Lukas Ferreira"` (repo-local)
-3. Delegate to `git-commit-helper` agent → grouped Conventional Commits reflecting phase progression
-4. Open PR with summary + requirements coverage matrix + test plan + a11y statement + security statement + **honest bundle miss documentation**
-5. **Do NOT push.** Branch stays local until GitHub access is recovered.
+### What is NOT remaining
 
-### Phase 8.5
+- No uncommitted work
+- No unpushed commits
+- No PR to open (committed directly to `main` before the push; the review team ran against local main)
+- No unfinished phases
+- No additional deferred items
 
-`/review-team <PR#>` — blocked until Phase 8.4 PR exists.
+### What IS remaining
 
-### Uncommitted additions to include in the Phase 8 commit
-
-- All Phase 0–7+++ source, tests, docs, configs (never committed)
-- Phase 8.2/8.3 fixes: barrel imports, `aria-required`, `focus-visible`, JSON-LD refactor, `.prettierignore`, `prettier.config.ts` type-only import, 67-file format pass, `year2022State` test strengthening
-- Today's documentation pass: `front-end/README.md` screenshots + demo video + architecture diagrams section, `front-end/scripts/capture-media.mjs`, `docs/media/*` (7 PNGs + `demo.webm`), `CLAUDE.md` visual reference section, `docs/WALKTHROUGH.md` (new 45-minute panel presenter guide), updates to all four load-bearing docs (PLAN/FINDINGS/JOURNAL/MEMORY-OF-AI) covering Phase 8.1–8.3 and the API proxy architectural story
+- The panel interview itself (not a coding task)
