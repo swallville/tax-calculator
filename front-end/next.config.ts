@@ -33,6 +33,18 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
+              // A Phase 8.5 deferred-item pass attempted a nonce-based CSP
+              // via middleware.ts to drop both `'unsafe-inline'` and
+              // `'unsafe-eval'`. The migration worked (47/47 Playwright
+              // chromium tests passed, zero browser console violations), but
+              // forcing a per-request nonce pushed every route from static
+              // prerender to dynamic SSR and inflated the first-load bundle
+              // by ~97 KB gzipped (121 KB → 218 KB). For this specific app
+              // — a public unauthenticated Canadian tax calculator whose
+              // only user input is a Zod-validated number and which has no
+              // XSS vectors in source — the bundle cost was judged not
+              // worth the strictness gain. The attempt and its measurements
+              // are documented in docs/IMPLEMENTATION-FINDINGS.md Phase 8.6.
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data:",

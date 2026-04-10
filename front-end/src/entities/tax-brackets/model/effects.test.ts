@@ -150,4 +150,37 @@ describe('retry filter — exercised via taxBracketsQuery', () => {
     expect(data).toEqual(mockBrackets);
     // 2 retries × 1000ms delay = at most 2000ms actual wait; set generous timeout
   }, 60000);
+
+  // Boundary case explicitly guarding the `error.status >= 500` predicate in
+  // effects.ts. If the filter were mutated to `error.status > 500`, the 500
+  // response below would NOT trigger a retry and the query would land in an
+  // error state. Having a focused single-500 → 200 case — as opposed to the
+  // two-500 → 200 case above — makes this boundary explicit for future readers
+  // and catches the one-character mutation cleanly. Added in Phase 8.5 after
+  // the testing review flagged the boundary as structurally untested through
+  // the retry wrapper path.
+  it('retry filter boundary: exactly HTTP 500 is retried (>= 500 not > 500)', async () => {
+    const mockBrackets = { tax_brackets: [{ min: 0, rate: 0.15 }] };
+
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        text: () => Promise.resolve(''),
+      })
+      .mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockBrackets),
+      });
+
+    const scope = fork();
+    await allSettled(taxBracketsQuery.start, { scope, params: 2022 });
+
+    // If 500 is not retried, $data stays null and the query lands in $error.
+    // Reaching $data means the retry pipeline fired on exactly status 500.
+    expect(scope.getState(taxBracketsQuery.$data)).toEqual(mockBrackets);
+    expect(scope.getState(taxBracketsQuery.$error)).toBeNull();
+    // 1 retry × 1000ms delay = ~1 second actual wait
+  }, 10000);
 });

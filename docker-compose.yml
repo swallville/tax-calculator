@@ -9,11 +9,19 @@ services:
       - "5001:5001"
 
   frontend:
-    build: ./front-end
+    # API_BASE_URL must be passed as a build-time ARG (not a runtime env var)
+    # because Next.js standalone mode bakes `next.config.ts` rewrites() at
+    # build time. A runtime `environment:` value has zero effect on the proxy
+    # destination — the value present at `next build` time is frozen into the
+    # final bundle. Using `build.args` makes this contract explicit; a prior
+    # `environment: API_BASE_URL` entry was misleading because it looked like
+    # a runtime knob that did nothing. See Phase 8.5 architecture review.
+    build:
+      context: ./front-end
+      args:
+        API_BASE_URL: http://backend:5001
     image: front-end:latest
     restart: unless-stopped
-    environment:
-      - API_BASE_URL=http://backend:5001
     ports:
       - "3000:3000"
     depends_on:

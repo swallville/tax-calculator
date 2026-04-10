@@ -3,15 +3,7 @@
 'use client';
 import { useEffect } from 'react';
 
-import type { TaxBracketsStore } from '#/entities/tax-brackets';
-import { $taxBrackets } from '#/entities/tax-brackets/model/store';
-import { createPersistedStore } from '#/shared/lib/store';
-
-// 2 minutes matches the typical user session for a single calculation review.
-// Shorter than a full page session (30 min) because tax results are only
-// meaningful in the immediate context — stale data from an hour ago would
-// confuse rather than help.
-const TWO_MINUTES_MS = 2 * 60 * 1000;
+import { persistTaxBracketsStore } from '#/entities/tax-brackets';
 
 interface StoresPersistenceProps {
   children: React.ReactNode;
@@ -23,24 +15,25 @@ interface StoresPersistenceProps {
  * Rendered in the server layout so the hydration effect runs once at the top
  * of the component tree before any child reads from `$taxBrackets`.
  *
- * `useEffect` is used (rather than module-level setup) because
- * `createPersistedStore` calls `localStorage`, which does not exist on the
+ * `useEffect` is used (rather than module-level setup) because the
+ * persistence factory calls `localStorage`, which does not exist on the
  * server. Deferring to `useEffect` guarantees execution only after hydration
  * on the client, preventing SSR crashes.
  *
- * The `sanitize` function strips the salary field before it ever reaches
- * storage — salary is PII and must not be written to localStorage even
- * transiently, in compliance with the project logging policy.
+ * The sanitize function (defined inside `persistTaxBracketsStore`) strips the
+ * salary field before it ever reaches storage — salary is PII and must not
+ * be written to localStorage even transiently, in compliance with the
+ * project logging policy.
+ *
+ * Phase 8.5 architecture review flagged the previous version of this file
+ * for reaching into `#/entities/tax-brackets/model/store` directly. The
+ * persistence factory is now encapsulated behind the entity's public barrel,
+ * so this component consumes a single named function and knows nothing about
+ * the store shape, the TTL, the storage key, or the sanitize rule.
  */
 export function StoresPersistence({ children }: StoresPersistenceProps) {
   useEffect(() => {
-    createPersistedStore<TaxBracketsStore>($taxBrackets, 'taxResults', {
-      ttlMs: TWO_MINUTES_MS,
-      sanitize: state => ({
-        ...state,
-        salary: 0, // Never persist salary (PII)
-      }),
-    });
+    persistTaxBracketsStore();
   }, []);
 
   return <>{children}</>;

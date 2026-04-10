@@ -64,8 +64,8 @@ the relative-path form so no loophole exists:
 - `src/widgets/**` cannot import from `#/app/**`.
 
 A violation produces a clear error message naming the offending layer. Import
-ordering within each file (external → parent → internal → sibling) is a
-separate rule (`import/order`).
+ordering within each file (external → parent → internal → sibling) is a separate
+rule (`import/order`).
 
 ## Layer READMEs
 
