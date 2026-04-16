@@ -556,7 +556,7 @@ Tried dynamic-importing `LoadingState`, `ErrorState`, and `TaxBreakdown` via `ne
 
 - **Target the 150 KB checklist item more honestly.** The number predates React 19 and Next.js 16. A reasonable modern target for this stack is ~220 KB gzipped. If I were to re-scope the checklist, I would split item 14 into "measured and documented" (always pass) and "below aspirational target" (informational, not blocking).
 - **Fix `prettier.config.ts` at the moment of installing Prettier 3.** The `import { Config }` vs `import type { Config }` distinction is trivial but silently kills the whole formatter. A CI step that runs `npm run validate` on every PR would have caught this in Phase 0 instead of Phase 8.3.
-- **Run `npm run validate` in the 7-step development cycle** in `.claude/WORKFLOW.md`, not just the individual checks from the quality gate. The validate script chains differently and exposes format/lint-fix interactions that the individual commands miss.
+- **Run `npm run validate` in the 8-step development cycle** in `.claude/WORKFLOW.md`, not just the individual checks from the quality gate. The validate script chains differently and exposes format/lint-fix interactions that the individual commands miss.
 
 ---
 

@@ -1,3 +1,11 @@
+import {
+  FIELD_CONTROL_BASE,
+  FIELD_ERROR,
+  FIELD_ICON_CENTERED,
+  FIELD_LABEL,
+  FIELD_WRAPPER,
+} from './styles';
+
 /**
  * Controlled salary field for the tax calculator form.
  *
@@ -43,16 +51,13 @@ function DollarIcon() {
  */
 export function SalaryInput({ error, disabled }: SalaryInputProps) {
   return (
-    <div className="flex flex-col gap-2">
-      <label
-        htmlFor="salary"
-        className="text-[0.8125rem] font-medium tracking-wide text-text-secondary"
-      >
+    <div className={FIELD_WRAPPER}>
+      <label htmlFor="salary" className={FIELD_LABEL}>
         Annual Income
       </label>
       <div className="relative">
         <span
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+          className={`${FIELD_ICON_CENTERED} left-4 text-text-secondary`}
           aria-hidden="true"
         >
           <DollarIcon />
@@ -68,7 +73,7 @@ export function SalaryInput({ error, disabled }: SalaryInputProps) {
           aria-invalid={!!error}
           aria-describedby={error ? 'salary-error' : undefined}
           disabled={disabled}
-          className="w-full bg-bg-input border border-border-input text-text-primary rounded-xl h-13 px-4 pl-10 placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring-focus focus:border-transparent transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          className={`${FIELD_CONTROL_BASE} pl-10 placeholder:text-text-muted`}
         />
       </div>
       {error && (
@@ -76,7 +81,7 @@ export function SalaryInput({ error, disabled }: SalaryInputProps) {
           id="salary-error"
           data-testid="salary-error"
           role="alert"
-          className="text-sm text-status-error"
+          className={FIELD_ERROR}
         >
           {error[0]}
         </p>

@@ -12,7 +12,7 @@ import { z } from 'zod';
 export const VALID_YEARS = [2019, 2020, 2021, 2022] as const;
 
 /** Union of every year in `VALID_YEARS`, e.g. `2019 | 2020 | 2021 | 2022`. */
-export type ValidYear = (typeof VALID_YEARS)[number];
+type ValidYear = (typeof VALID_YEARS)[number];
 
 /**
  * The most recent year in `VALID_YEARS`, used as the pre-selected option in
@@ -83,5 +83,3 @@ export const TaxFormInputSchema = z.object({
     ),
 });
 
-/** Inferred TypeScript type for validated form inputs. */
-export type TaxFormInput = z.infer<typeof TaxFormInputSchema>;

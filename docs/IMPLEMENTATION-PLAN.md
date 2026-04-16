@@ -1136,7 +1136,7 @@ Addressed all seven deferred items from Phase 8.5. Architectural cleanups for `S
 12. **Edge case + failure tests** (Phase 7+): Boundary values, network errors, malformed JSON, extreme inputs
 13. **Mermaid diagrams** (Phase 7+): 6 visual diagrams in docs/diagrams/ (architecture, data-flow, error-flow, state-machine, component-tree, infrastructure)
 14. **Coverage threshold** (Phase 7+): 85% minimum enforced in jest.config.ts
-15. **Workflow doc** (.claude/WORKFLOW.md): 7-step development cycle for future sessions
+15. **Workflow doc** (.claude/WORKFLOW.md): 8-step development cycle for future sessions (Simplify pass added between Implement and Test on 2026-04-16)
 16. **Dead code cleanup** (continuous): api.ts, unused events/selectors, shimmer keyframe, favicon.ico, empty shared/ui/, dead aliases
 
 ### Documentation Deliverables (Phase 7 — expanded)

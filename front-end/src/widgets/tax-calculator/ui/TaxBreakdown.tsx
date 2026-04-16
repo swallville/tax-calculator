@@ -5,7 +5,17 @@ import { selectors } from '#/entities/tax-brackets';
 import { formatCurrency, formatPercent } from '#/shared/lib/format';
 import type { BandBreakdown } from '#/shared/lib/tax/types';
 
+import { PANEL_CARD } from './styles';
+
 type BandRowProps = BandBreakdown & { index: number };
+
+// All header cells share the same chrome — only the text alignment differs
+// per column. Centralising these strings here keeps the <thead> readable.
+const TH_BASE =
+  'px-4 py-3 text-xs font-semibold uppercase tracking-widest text-text-muted';
+const TD_BODY_BASE = 'px-4 py-3 font-mono text-sm text-text-secondary';
+const ROW_STRIPE = (index: number) =>
+  index % 2 === 0 ? 'bg-bg-highlight' : 'bg-bg-sub';
 
 /**
  * A single tax-bracket row inside the results table.
@@ -30,19 +40,19 @@ const BandRow = memo(function BandRow({
   return (
     <tr
       data-testid={`band-row-${index}`}
-      className={`h-13 ${index % 2 === 0 ? 'bg-bg-highlight' : 'bg-bg-sub'} hover:bg-bg-row-hover transition-colors duration-150`}
+      className={`h-13 ${ROW_STRIPE(index)} hover:bg-bg-row-hover transition-colors duration-150`}
       // animationDelay cannot be expressed as a Tailwind utility without a
       // custom plugin — an inline style is the narrowest exception allowed
       // by project rules when a value is computed at runtime.
       style={{ animationDelay: `${index * 50}ms` }}
     >
-      <td className="px-4 py-3 font-mono text-sm text-text-secondary first:rounded-l-lg">
+      <td className={`${TD_BODY_BASE} first:rounded-l-lg`}>
         {formatCurrency(min)} – {maxLabel}
       </td>
       <td className="px-4 py-3 font-mono text-[0.8125rem] font-semibold text-text-accent text-right">
         {formatPercent(rate)}
       </td>
-      <td className="px-4 py-3 font-mono text-sm text-text-secondary text-right last:rounded-r-lg">
+      <td className={`${TD_BODY_BASE} text-right last:rounded-r-lg`}>
         {formatCurrency(tax)}
       </td>
     </tr>
@@ -67,7 +77,7 @@ export function TaxBreakdown() {
   return (
     <section
       data-testid="tax-breakdown"
-      className="bg-bg-card rounded-[1.25rem] p-6 md:p-8 lg:p-10 flex-1 min-w-0 flex flex-col gap-5 animate-[fade-in-up_0.4s_ease-out_both]"
+      className={`${PANEL_CARD} flex-1 min-w-0 flex flex-col gap-5 animate-[fade-in-up_0.4s_ease-out_both]`}
       aria-labelledby="tax-breakdown-heading"
     >
       <h2
@@ -82,22 +92,13 @@ export function TaxBreakdown() {
         <table data-testid="tax-table" className="w-full min-w-120">
           <thead>
             <tr className="border-b border-border-subtle">
-              <th
-                scope="col"
-                className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-text-muted"
-              >
+              <th scope="col" className={`${TH_BASE} text-left`}>
                 Bracket Range
               </th>
-              <th
-                scope="col"
-                className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-text-muted"
-              >
+              <th scope="col" className={`${TH_BASE} text-right`}>
                 Rate
               </th>
-              <th
-                scope="col"
-                className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-text-muted"
-              >
+              <th scope="col" className={`${TH_BASE} text-right`}>
                 Tax
               </th>
             </tr>

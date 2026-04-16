@@ -81,7 +81,7 @@ npm run tsc:check && npm run lint && npm run analyse:circular && npm run test &&
 - `playwright.config.ts` — E2E with Docker webServer
 
 ## Development Workflow
-Follow `.claude/WORKFLOW.md` for the 7-step cycle: Implement → Test → Quality Gate → Update Docs → Update Memory → Rebuild → Review
+Follow `.claude/WORKFLOW.md` for the 8-step cycle: Implement → Simplify → Test → Quality Gate → Update Docs → Update Memory → Rebuild → Review
 
 ## Documentation
 - Implementation plan: `docs/IMPLEMENTATION-PLAN.md`

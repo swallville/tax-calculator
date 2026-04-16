@@ -4,6 +4,7 @@ import { useCalculateAction } from '../lib/useCalculateAction';
 
 import { CalculateButton } from './CalculateButton';
 import { SalaryInput } from './SalaryInput';
+import { PANEL_CARD } from './styles';
 import { YearSelect } from './YearSelect';
 
 /**
@@ -20,7 +21,7 @@ export function TaxForm() {
   return (
     <section
       data-testid="tax-form"
-      className="bg-bg-card rounded-[1.25rem] p-6 md:p-8 lg:p-10 lg:w-110 lg:shrink-0"
+      className={`${PANEL_CARD} lg:w-110 lg:shrink-0`}
       aria-labelledby="tax-form-heading"
     >
       <h2

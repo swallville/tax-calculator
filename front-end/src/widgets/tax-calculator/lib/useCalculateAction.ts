@@ -10,7 +10,7 @@ import { parseCurrency } from '#/shared/lib/format';
  * Separate from the Effector store — this tracks client-side Zod validation
  * errors that should never propagate to the global state layer.
  */
-export type FormState = {
+type FormState = {
   errors: { salary?: string[]; year?: string[] };
   submitted: boolean;
 };

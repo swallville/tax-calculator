@@ -1,13 +1,8 @@
-// Re-export domain types from shared so the entity layer owns the public
-// contract without duplicating definitions. Consumers import from this file,
-// not from #/shared directly — that way a shared rename only breaks here.
 import type { BandBreakdown } from '#/shared/lib/tax';
 
-export type {
-  TaxBracket,
-  BandBreakdown,
-  TaxCalculationResult,
-} from '#/shared/lib/tax';
+// Re-exported so entity-internal modules can import domain types via
+// `../types` without reaching into `#/shared/lib/tax` directly.
+export type { BandBreakdown } from '#/shared/lib/tax';
 
 /**
  * Discriminated error state for the tax brackets feature.

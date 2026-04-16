@@ -8,6 +8,14 @@
  */
 import { DEFAULT_YEAR, VALID_YEARS } from '#/entities/tax-brackets';
 
+import {
+  FIELD_CONTROL_BASE,
+  FIELD_ERROR,
+  FIELD_ICON_CENTERED,
+  FIELD_LABEL,
+  FIELD_WRAPPER,
+} from './styles';
+
 /** Years in descending order (newest first) — computed once at module scope to avoid
  * re-creating the reversed array on every render. */
 const YEARS_DESCENDING = [...VALID_YEARS].reverse();
@@ -51,11 +59,8 @@ function ChevronDownIcon() {
  */
 export function YearSelect({ error, disabled }: YearSelectProps) {
   return (
-    <div className="flex flex-col gap-2">
-      <label
-        htmlFor="year"
-        className="text-[0.8125rem] font-medium tracking-wide text-text-secondary"
-      >
+    <div className={FIELD_WRAPPER}>
+      <label htmlFor="year" className={FIELD_LABEL}>
         Tax Year
       </label>
       <div className="relative">
@@ -68,7 +73,7 @@ export function YearSelect({ error, disabled }: YearSelectProps) {
           aria-describedby={error ? 'year-error' : undefined}
           disabled={disabled}
           defaultValue={DEFAULT_YEAR}
-          className="w-full appearance-none bg-bg-input border border-border-input text-text-primary rounded-xl h-13 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-ring-focus focus:border-transparent transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          className={`${FIELD_CONTROL_BASE} appearance-none pr-10`}
         >
           {YEARS_DESCENDING.map(year => (
             <option key={year} value={year}>
@@ -77,7 +82,7 @@ export function YearSelect({ error, disabled }: YearSelectProps) {
           ))}
         </select>
         <span
-          className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted"
+          className={`${FIELD_ICON_CENTERED} right-4 text-text-muted`}
           aria-hidden="true"
         >
           <ChevronDownIcon />
@@ -88,7 +93,7 @@ export function YearSelect({ error, disabled }: YearSelectProps) {
           id="year-error"
           data-testid="year-error"
           role="alert"
-          className="text-sm text-status-error"
+          className={FIELD_ERROR}
         >
           {error[0]}
         </p>

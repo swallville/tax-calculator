@@ -524,6 +524,29 @@ npm run test:e2e:chromium
 
 The `webServer` config in `playwright.config.ts` automatically starts `docker compose up --wait` before the first test runs. Set `CI=true` to disable server reuse and force a clean start.
 
+### Simplify Pass (run BEFORE the Quality Gate)
+
+Step 2 of the 8-step cycle in `.claude/WORKFLOW.md`. Mandatory after every code change, before writing tests:
+
+```bash
+# Dead exports — flags unused barrel re-exports and orphan symbols.
+# Framework defaults (jest/next/playwright/prettier configs, app/layout.tsx,
+# app/opengraph-image.tsx) always show — those are entry points, never remove.
+npx --yes ts-unused-exports tsconfig.json --excludePathsFromReport='e2e;scripts;@types;jest.setup.js'
+
+# Orphan dependencies — flags packages declared in package.json but never
+# imported. Ignore the standard config-driven false positives for this repo
+# (see WORKFLOW.md for the list).
+npm run analyse:deps
+
+# Tailwind class deduplication — find chains repeated across files.
+grep -rn 'className="[^"]\{40,\}"' src/
+```
+
+When duplication appears, extract a colocated `styles.ts` (named const exports) or hoist a module-level constant within the file. Project rule forbids `@apply` and CSS modules in v4 — TS-string deduplication is the chosen pattern. See `src/widgets/tax-calculator/ui/styles.ts` for the canonical example.
+
+When in doubt, invoke the `simplify` skill on the changed files. Re-run the Quality Gate after — removing exports can break internal imports the dead-code pass missed.
+
 ### Quality Gate
 
 Run this sequence after every implementation phase before committing:

@@ -298,7 +298,7 @@ The Next.js server receives the browser's request at its own origin, applies the
 
 12. **`CLAUDE.md`** — Project conventions, critical config list, testing strategy, hooks, accessibility rules, cross-browser rules, salary PII handling.
 
-13. **`.claude/WORKFLOW.md`** — 7-step development cycle.
+13. **`.claude/WORKFLOW.md`** — 8-step development cycle (adds a mandatory Simplify pass between Implement and Test).
 
 14. **`.claude/learnings/`** — 9 feedback files mirroring session memory.
 

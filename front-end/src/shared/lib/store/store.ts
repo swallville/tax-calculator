@@ -56,11 +56,11 @@ export const createPersistedStore = <T>(
     store,
     key,
     serialize: (state: T) => {
-      // Apply sanitize before serialisation so sensitive fields are stripped
+      // Apply sanitize before serialization so sensitive fields are stripped
       // from the stored string, not just from the in-memory state.
       const safe = sanitize ? sanitize(state) : state;
       // The `ts` field is the write timestamp used by the TTL check on
-      // deserialisation. Storing it inside the envelope avoids a second
+      // deserialization. Storing it inside the envelope avoids a second
       // `localStorage` entry per store.
       return JSON.stringify({ data: safe, ts: Date.now() });
     },

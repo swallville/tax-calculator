@@ -5,6 +5,11 @@
  */
 const SKELETON_ROW_COUNT = 5;
 
+// Shared chrome for the pill-shaped skeleton bars. Width is the only
+// per-instance variable, so callers append `w-[XX%]` (or `ml-auto`) instead
+// of restating the colour, height, and rounding.
+const SKELETON_BAR = 'h-3 rounded-full bg-text-muted/15';
+
 /**
  * Skeleton placeholder shown while an API calculation is in-flight.
  *
@@ -26,7 +31,7 @@ export function LoadingState() {
       aria-label="Loading tax calculation"
       aria-busy="true"
     >
-      {/* Heading skeleton */}
+      {/* Heading skeleton — taller bar than body bars (h-5 vs h-3). */}
       <div className="h-5 w-[40%] rounded-full bg-text-muted/15 animate-pulse" />
 
       {/* Row skeletons — column widths approximate bracket/rate/tax proportions */}
@@ -38,17 +43,17 @@ export function LoadingState() {
               i % 2 === 0 ? 'bg-bg-highlight' : 'bg-bg-sub'
             }`}
           >
-            <div className="w-[45%] h-3 rounded-full bg-text-muted/15" />
-            <div className="w-[20%] h-3 rounded-full bg-text-muted/15" />
-            <div className="w-[25%] h-3 rounded-full bg-text-muted/15 ml-auto" />
+            <div className={`${SKELETON_BAR} w-[45%]`} />
+            <div className={`${SKELETON_BAR} w-[20%]`} />
+            <div className={`${SKELETON_BAR} w-[25%] ml-auto`} />
           </div>
         ))}
       </div>
 
       {/* Total skeleton */}
       <div className="h-13 rounded-lg bg-bg-total animate-pulse flex items-center px-4">
-        <div className="w-[30%] h-3 rounded-full bg-text-muted/15" />
-        <div className="w-[25%] h-3 rounded-full bg-text-muted/15 ml-auto" />
+        <div className={`${SKELETON_BAR} w-[30%]`} />
+        <div className={`${SKELETON_BAR} w-[25%] ml-auto`} />
       </div>
 
       {/* Visible only to screen readers — the animated divs above are silent */}
