@@ -1,30 +1,13 @@
 /**
  * Application-wide structured logger.
  *
- * Historical note: this module previously wrapped Pino's browser build
- * (~15 KB gzipped). Phase 8.5 performance review flagged Pino as the one
- * non-load-bearing dependency that could be replaced for bundle savings
- * without touching the core architectural story (reactive state, query
- * layer, schema validation). The replacement is a 60-line custom logger
- * that preserves the exact public interface used by the three call sites
- * (`logger.info`, `logger.warn`, `logger.error`, `logger.debug`) plus the
- * `level` property and the PII redaction contract. Recovered ~12 KB
- * gzipped from the first-load bundle.
+ * Log level: `debug` in development, `info` in production (suppresses
+ * debug traces to reduce volume and avoid leaking context fields).
  *
- * Log level policy:
- * - `debug` in development — verbose enough to trace API calls and store
- *   transitions without noise in CI or production.
- * - `info` in production — suppresses debug-level traces to reduce log
- *   volume and avoid inadvertently shipping sensitive context fields.
- *
- * PII redaction:
- * - Field `salary` at the top level of the log context is always replaced
- *   with the literal string `'[Redacted]'`.
- * - Field `salary` nested one level deep (e.g. `{ form: { salary } }`) is
- *   also replaced. The `*.salary` path mirrors the Pino redact spec the
- *   previous implementation used.
- * - Redaction is applied before the log entry is emitted, so no
- *   downstream transport can leak the raw value.
+ * PII redaction: fields matching `salary` (top-level) or `*.salary`
+ * (one-level-nested) are replaced with `'[Redacted]'` before emit, so no
+ * downstream transport can leak the raw value. The `*.salary` path mirrors
+ * a Pino redact spec for forward compatibility.
  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';

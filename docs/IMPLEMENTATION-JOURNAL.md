@@ -661,20 +661,6 @@ Without that role, the false FSD lint claim would have shipped to the panel inte
 
 ---
 
-## Final Closing (after Phase 8.5 and 8.6)
-
-The sword has been inspected by one smith, then by five, then by its own maker one more time. The first inspection caught the chips in the edge. The second caught the stories the smith told about the edge. The third — the deferred-items pass — caught the measurements the smith had taken in haste and the optimization the smith almost shipped without measuring the real cost.
-
-The steel is what the walkthrough says it is, no more and no less. The numbers are the real numbers, taken twice against a clean anvil. The security story is defensible for the actual threat model this app faces. The architectural claims all have code backing them.
-
-Until the next dawn, which is now the commit of these Phase 8.6 fixes on top of the sixteen that already landed, and the push to the pull request when the account is recovered.
-
-*— Recorded in the Year 2026 of the Western Calendar, the 10th day of the 4th month, at the completion of the deferred-items pass.*
-
-*Companion scroll: [MEMORY-OF-AI.md](MEMORY-OF-AI.md) — the diary of insight.*
-
----
-
 ## Phase 8.7 — The Remote is Real, the Landing Page is Built, the Co-Author is Gone
 
 **Translation**: Late on 2026-04-10 the GitHub account was finally recovered. The user created `swallville/tax-calculator` as a fresh empty repository and asked me to populate it with the local work that had been sitting on `main` since the Phase 8.4 commit. Three things needed to happen in sequence: push the existing history, reorganize the documentation so a GitHub visitor sees a useful landing page instead of a raw Next.js front-end README, and scrub the `Co-Authored-By: Claude` trailers from every commit so the history reflects the real human author.

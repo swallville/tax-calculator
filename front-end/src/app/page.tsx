@@ -1,14 +1,7 @@
 'use client';
-// The Effector `sample()` wiring that connects calculateRequested to the
-// fetch effect is activated automatically when any consumer imports from the
-// tax-brackets entity barrel — the barrel itself loads the samples module as
-// a side effect. This component's imports from `#/widgets/tax-calculator` (and
-// the widgets' transitive imports from `#/entities/tax-brackets`) trigger the
-// activation, so no direct side-effect import is needed here. The previous
-// explicit `import '#/entities/tax-brackets/model/samples'` was a landmine —
-// it bypassed the public barrel and would silently deactivate all wiring if
-// a future developer removed what looked like a "dead" import. Fixed in
-// Phase 8.5 architecture review.
+// Effector sample() wiring is activated as a side effect of importing from
+// the tax-brackets entity barrel — which happens transitively via the widget
+// imports below. No explicit side-effect import needed here.
 import {
   EmptyState,
   ErrorState,

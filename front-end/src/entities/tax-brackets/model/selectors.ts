@@ -5,22 +5,18 @@ import { calculateRequested, resetResults } from './events';
 import { $taxBrackets } from './store';
 
 /**
- * Selector hooks for the `$taxBrackets` store and related units.
+ * Selector hooks for the `$taxBrackets` store.
  *
- * Each selector reads from a **module-scoped derived store** so that
- * `createStore`/`.map()` runs exactly once per selector, not once per render.
- * This prevents the "derived-store leak" where repeated `.map()` calls inside
- * a hook body add a new subscriber node to the Effector graph on every render
- * and never release them. Hoisting to module scope is the canonical Effector
- * pattern — identified during the Phase 8.5 performance review.
+ * Each selector reads from a **module-scoped derived store** so `.map()` runs
+ * exactly once per selector, not once per render — hoisting avoids the
+ * derived-store leak where repeated `.map()` calls add subscriber nodes to
+ * the Effector graph on every render without releasing them.
  *
- * Granular subscriptions are critical for avoiding unnecessary re-renders in
- * the results table: a component using `useBands()` only re-renders when
- * `bands` changes, not when `salary`, `year`, or `isPending` changes.
+ * Granular subscriptions mean a component using `useBands()` re-renders only
+ * when `bands` changes, not when `salary`/`year`/`isPending` change.
  *
- * Action selectors (`useCalculateRequested`, `useResetResults`) expose bound
- * event dispatchers so components stay decoupled from the Effector model
- * import path — they consume selectors, not raw events.
+ * Action selectors expose bound event dispatchers so components consume
+ * selectors, not raw events.
  */
 
 // Module-scoped derived stores — created once at import time, subscribers

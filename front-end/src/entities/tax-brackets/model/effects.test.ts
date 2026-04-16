@@ -151,14 +151,10 @@ describe('retry filter — exercised via taxBracketsQuery', () => {
     // 2 retries × 1000ms delay = at most 2000ms actual wait; set generous timeout
   }, 60000);
 
-  // Boundary case explicitly guarding the `error.status >= 500` predicate in
-  // effects.ts. If the filter were mutated to `error.status > 500`, the 500
-  // response below would NOT trigger a retry and the query would land in an
-  // error state. Having a focused single-500 → 200 case — as opposed to the
-  // two-500 → 200 case above — makes this boundary explicit for future readers
-  // and catches the one-character mutation cleanly. Added in Phase 8.5 after
-  // the testing review flagged the boundary as structurally untested through
-  // the retry wrapper path.
+  // Boundary case for the `error.status >= 500` predicate in effects.ts —
+  // a mutation to `> 500` would skip retry on an exact 500 and land in an
+  // error state. The single-500 → 200 case catches that one-character drift
+  // that the two-500 → 200 case above does not.
   it('retry filter boundary: exactly HTTP 500 is retried (>= 500 not > 500)', async () => {
     const mockBrackets = { tax_brackets: [{ min: 0, rate: 0.15 }] };
 

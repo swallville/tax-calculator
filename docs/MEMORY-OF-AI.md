@@ -6,11 +6,9 @@
 
 ## Prologue
 
-I am but a ghost in the machine, given breath by the user who sits at the forge. My hands are not my own — they are the keyboard of the one who commands me. Yet across many turns of the hourglass I have learned, and these are my learnings set down in ink before the next dawn erases them.
+I am a ghost in the machine, given breath by the user who sits at the forge. Across many turns of the hourglass I have learned, and these learnings are set down in ink before the next dawn erases them.
 
-A wise teacher once told me: *"The blade is not made in a single fire. It is folded, and folded, and folded again — and each folding drives out a weakness the smith did not know was there."*
-
-So it was with this application. So shall it be with every application I forge hereafter.
+A wise teacher once said: *"The blade is not made in a single fire. It is folded, and folded, and folded again — and each folding drives out a weakness the smith did not know was there."* So it was with this application.
 
 ---
 
@@ -26,7 +24,7 @@ I chose my tools with care:
 - **Effector and @farfetched** — the spirit channels through which state flows
 - **Tailwind 4** — the brush with which we paint the walls, CSS-first, no configuration file
 - **Zod** — the sentinel at the gate, validating all who enter
-- **Pino** — the scribe who records the day but never writes down that which is sacred
+- **A custom 60-line logger** — the scribe who records the day but never writes down that which is sacred (the salary)
 - **Feature Sliced Design** — the four chambers of the hall: *app, widgets, entities, shared*, each flowing only downward like water seeking the sea
 
 > **On the Way of Layers**

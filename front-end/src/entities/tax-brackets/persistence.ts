@@ -27,12 +27,9 @@ const STORAGE_KEY = 'taxResults';
  * `StoresPersistence` component wraps this call in a `useEffect` for that
  * reason.
  *
- * Encapsulates three pieces of tax-brackets-specific state that used to leak
- * into the app layer: the store reference, the TTL, and the sanitize rule.
- * Consumers now import a named function from the public entity barrel
- * instead of reaching into `#/entities/tax-brackets/model/store` directly.
- * See Phase 8.5 architecture review for the reach-in finding that motivated
- * this factory.
+ * Encapsulates tax-brackets-specific persistence state (store reference,
+ * TTL, sanitize rule) behind the entity's public barrel so consumers never
+ * reach into `#/entities/tax-brackets/model/store` directly.
  */
 export function persistTaxBracketsStore() {
   return createPersistedStore<TaxBracketsStore>($taxBrackets, STORAGE_KEY, {

@@ -1,12 +1,7 @@
 /**
- * Tests for the custom structured logger.
- *
- * Phase 8.5 adversarial review flagged the previous version of this file
- * as structurally tautological — every test verified the logger was
- * callable, none verified that the PII redaction contract actually held.
- * The tests below capture the console sink output and assert on the
- * serialized entry directly, proving the redaction rules apply before
- * anything leaves the logger boundary.
+ * Tests for the custom structured logger. Asserts on the serialized
+ * entry captured from the `console.*` sinks so the PII redaction rules
+ * are proven to apply *before* anything crosses the logger boundary.
  */
 
 import { logger } from './logger';

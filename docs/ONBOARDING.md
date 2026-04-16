@@ -123,17 +123,16 @@ All types consumed by the rest of the app are derived via `z.infer<typeof Schema
 
 ### Custom structured logger
 
-A 60-line custom logger in `src/shared/lib/logger/logger.ts` wraps `console.debug/info/warn/error` with structured entries and a salary-redacting `redact()` helper. This replaced the Pino dependency during the Phase 8.6 deferred-items pass after the Phase 8.5 adversarial review flagged Pino as the one non-load-bearing dependency in the bundle defense.
+A 60-line logger at `src/shared/lib/logger/logger.ts` wraps `console.*` with
+structured entries and a hard-coded redact list (`['salary', '*.salary']`)
+that replaces any salary field with `'[Redacted]'` before emit. Numeric
+levels follow Pino's scheme (`debug=20, info=30, warn=40, error=50`) so
+Pino-aware log aggregators parse the output unchanged. Level resolves once
+at module load — `debug` in development, `info` in production.
 
-**Critical rule: salary values must never appear in log output.** The logger's hard-coded redact list (`['salary', '*.salary']`) replaces any field named `salary` at the top level or one level nested in any logged object with the literal string `'[Redacted]'`. This happens before the entry reaches `console.*`, so no downstream transport can leak the raw value. The behavior is verified by `logger.test.ts`, which captures `console.*` output via `jest.spyOn` and asserts both that the redact value is present and that the raw numeric value is absent from `JSON.stringify(entry)`.
-
-Log levels resolved at module load from `NODE_ENV`:
-- `debug` in development (`NODE_ENV !== 'production'`)
-- `info` and above in production (debug entries are filtered out before emit)
-
-Numeric level tags emitted in every entry (`debug=20, info=30, warn=40, error=50`) match Pino's scheme, so any log aggregators that parsed the previous Pino output continue to parse the new output unchanged.
-
-Events that are always logged: API call start, retry attempts, calculation result (total tax + effective rate only — never the salary), and all errors with their HTTP status.
+**Critical rule: salary values must never appear in log output.** Logged
+events: API call start, retry attempts, calculation result (total tax +
+effective rate only — never the salary), and all errors with HTTP status.
 
 ### Feature Sliced Design
 
@@ -143,49 +142,17 @@ See [Section 3](#3-code-architecture) for the full layer breakdown. FSD is the s
 
 ## 3. Code Architecture
 
-### FSD Layer Diagram
-
 ```
-src/
-├── app/          ← Next.js routing, layout, metadata, globals.css
-│   └── (imports from widgets, entities, shared)
-│
-├── widgets/      ← Feature-specific composed UI components
-│   └── (imports from entities, shared)
-│       (NEVER imports from other widgets)
-│
-├── entities/     ← Business domain models (Effector stores, events, effects)
-│   └── (imports from shared only)
-│
-└── shared/       ← Reusable utilities, API client, UI primitives, test helpers
-    └── (NO imports from any other layer)
+app  →  widgets  →  entities  →  shared
 ```
 
-The rule is **never import upward**. `shared` cannot import from `entities`. `entities` cannot import from `widgets`. If you find yourself wanting to do this, the abstraction belongs in a lower layer.
+Higher layers depend on lower layers; lower layers never depend on higher
+ones. `shared` has zero business domain knowledge. The rule is enforced by
+ESLint `no-restricted-imports` boundaries and a circular-dependency check.
 
-### Layer Responsibilities
-
-**`src/app/`**
-
-Owns Next.js concepts: route segments, layouts, `page.tsx` files, `globals.css`, metadata exports, and `opengraph-image.tsx`. The root `page.tsx` composes widget components and delegates all state reads to selectors. It contains no business logic.
-
-**`src/widgets/`**
-
-Owns the composed UI for a feature. Currently one widget: `tax-calculator`. A widget pulls state from entity selectors and renders it. A widget may call entity events (e.g. `calculateRequested`) but does not own any store logic itself. Multiple UI components live under `widgets/tax-calculator/ui/` as named exports gathered through the widget's barrel `index.ts`.
-
-**`src/entities/`**
-
-Owns business domain models. The `tax-brackets` entity contains the complete Effector model: store shape, events, effects, sample wiring, API schema, and selector hooks. It also exports shared TypeScript types through its barrel `index.ts`.
-
-**`src/shared/`**
-
-Owns everything that has no business domain knowledge:
-- `api/` — generic fetch client and `ApiError` class
-- `lib/tax/` — pure `calculateTax` function
-- `lib/format/` — `formatCurrency` and `formatPercent` utilities
-- `lib/logger/` — Custom structured logger (`console.*` wrapper with salary redact)
-- `lib/store/` — `createPersistedStore` helper and `StoresPersistence` provider
-- `lib/test/` — custom RTL render wrapper
+Full tree layout, per-layer responsibilities, slice structure, and FSD
+anti-patterns with code examples live in
+[ARCHITECTURE.md](ARCHITECTURE.md) — read that once before your first PR.
 
 ### File Naming Conventions
 
@@ -263,7 +230,7 @@ Circular dependency detection runs as part of the quality gate (`npm run analyse
 
 3. Never use `@utility` — the directive does not exist in Tailwind 4.
 
-4. The full list of available tokens is in `src/app/globals.css` under `:root` and `@theme inline`. Refer to `docs/DESIGN-SYSTEM.md` for the complete design token reference.
+4. The full list of available tokens is in `src/app/globals.css` under `:root` and `@theme inline`. Refer to `docs/DESIGN-SYSTEM-GUIDE.md` for the complete design token reference.
 
 ---
 
@@ -612,6 +579,6 @@ npm run validate         # format:check + lint:fix + tsc:check + analyse:circula
 ## Further Reading
 
 - **`docs/ARCHITECTURE.md`** — full stack table, FSD diagram, data flow, API integration summary
-- **`docs/DESIGN-SYSTEM.md`** — complete color token reference, typography scale, component specs, spacing rules
+- **`docs/DESIGN-SYSTEM-GUIDE.md`** — complete color token reference, typography scale, component specs, spacing rules
 - **`docs/IMPLEMENTATION-PLAN.md`** — phase-by-phase implementation record with decision rationale
 - **`back-end/README.md`** — original assignment brief, API endpoints, known error scenarios, expected calculation results

@@ -66,11 +66,10 @@ describe('apiClient', () => {
       const networkError = new TypeError('Failed to fetch');
       (global.fetch as jest.Mock).mockRejectedValueOnce(networkError);
 
-      // Both assertions must run against the SAME rejected promise — the
-      // previous version used two separate await expect blocks that consumed
-      // only the first mockRejectedValueOnce, leaving the second call to hit
-      // the reset default mock and throw a structurally-different error.
-      // Caught by the Phase 8.5 testing review.
+      // Both assertions must run against the SAME rejected promise.
+      // Two separate `await expect` blocks would each consume a
+      // `mockRejectedValueOnce`, so the second assertion would hit the reset
+      // default mock and throw a structurally-different error.
       let thrown: unknown;
       try {
         await apiClient({ url: '/api/tax-calculator/tax-year/2022' });

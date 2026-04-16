@@ -31,7 +31,7 @@ src/
   entities/       Business domain models (tax-brackets: Effector stores, events, effects)
   shared/         Reusable utilities — API client, logger, format helpers, test utils
 e2e/              Playwright E2E tests (chromium, firefox, webkit, mobile-chrome)
-scripts/          Standalone scripts (capture-media.mjs, csp-probe.mjs)
+scripts/          Standalone scripts (capture-media.mjs)
 public/           Static assets
 ```
 

@@ -253,3 +253,73 @@ Set via `next.config.ts` `headers()` for all routes:
 - **Tailwind 4**: CSS-first config via `@theme inline` in `globals.css`; 28 design tokens drive all color, spacing, and typography utilities. No `tailwind.config.ts` exists.
 - **Import aliases**: `#/shared/*`, `#/entities/*`, `#/widgets/*` declared in `tsconfig.json` and enforced by ESLint import-boundary rules.
 - **Logging**: Custom 60-line structured logger at `src/shared/lib/logger/logger.ts`. Wraps `console.debug/info/warn/error` and applies a hand-written `redact()` helper with the path list `['salary', '*.salary']` to strip salary values before emit. Preserves Pino-compatible numeric level values (`debug=20, info=30, warn=40, error=50`) so downstream log aggregators that parsed the previous Pino NDJSON output continue to parse the new output with no config change. Replaced the `pino` dependency during the Phase 8.6 deferred-items pass to correct the architectural-honesty claim that every bundle dependency was load-bearing — Pino was the one exception, a logger masquerading as architecture.
+
+---
+
+## Slice Structure
+
+Each entity or widget directory follows a consistent internal structure:
+
+```
+<slice-name>/
+├── index.ts        # Public barrel — the slice's only API contract.
+│                   # External code imports from here, never from sub-paths.
+├── model/          # Effector state (entities only):
+│   ├── store.ts    # createStore + .on() handlers
+│   ├── events.ts   # createEvent definitions
+│   ├── effects.ts  # createEffect + createQuery (farfetched)
+│   ├── samples.ts  # sample() declarative wiring
+│   ├── selectors.ts# useUnit() derived hooks
+│   └── apiSchema.ts# Zod schemas + zodContract
+├── ui/             # React components (widgets only)
+├── lib/            # Custom hooks and pure helpers
+└── types.ts        # TypeScript types re-exported by index.ts
+```
+
+The `index.ts` barrel is the slice's public contract — it decides what is
+external API. Sub-path files are private implementation, subject to change
+without notice.
+
+Naming convention in `events.ts`: `*Requested` events carry user intent and
+are safe to dispatch from UI. `set*` events carry derived data and must only
+be dispatched from `samples.ts`. Selectors never expose `set*` events, which
+makes the split a type-level contract.
+
+---
+
+## FSD Anti-Patterns
+
+**Upward imports.** A lower layer importing from a higher layer. Example: if
+`shared/lib/tax/types.ts` imported `ErrorType` from
+`entities/tax-brackets/types.ts`, the entire layer boundary would break.
+
+```ts
+// Wrong — shared importing from entities
+import type { ErrorType } from '#/entities/tax-brackets/types';
+
+// Correct — shared owns the type; entities re-exports it
+import type { ErrorType } from '#/shared/lib/tax/types';
+```
+
+**Cross-widget imports.** Coupling between features. If `widgets/A` needs
+data that `widgets/B` also uses, the data belongs in an entity or shared
+utility, not in either widget.
+
+**Deep imports past a barrel.** Bypasses the slice's public API. If the
+internal file is later renamed or restructured, every caller breaks.
+
+```ts
+// Wrong — deep import bypasses the public barrel
+import { $taxBrackets } from '#/entities/tax-brackets/model/store';
+
+// Correct — imports through the public barrel
+import { selectors, calculateRequested } from '#/entities/tax-brackets';
+```
+
+**Business logic in UI components.** Widgets must read state via selectors
+and dispatch events via hooks — never compute totals or classify errors
+inline. Domain rules live in `shared/lib/` or `entities/`.
+
+**Dispatching `set*` events from UI.** `setBrackets` and `setError` are
+internal to the entity model; only `samples.ts` dispatches them. UI
+dispatches `calculateRequested`, which is the public entry point.

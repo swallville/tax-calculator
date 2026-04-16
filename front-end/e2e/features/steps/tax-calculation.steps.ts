@@ -116,3 +116,7 @@ Then('I should see either results or an error', async () => {
     timeout: 30_000,
   });
 });
+
+Then('the page should not contain {string}', async ({}, value: string) => {
+  await expect(calc.page.locator('body')).not.toContainText(value);
+});

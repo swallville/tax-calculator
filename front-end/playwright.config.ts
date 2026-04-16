@@ -1,7 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
+import { defineBddConfig } from 'playwright-bdd';
+
+// Wires Gherkin feature files + step definitions into Playwright's test runner.
+// `bddgen test` regenerates `.features-gen/` from `.feature` files and then
+// invokes `playwright test`, which matches both the hand-written `.spec.ts`
+// files and the generated BDD specs via `testMatch` below.
+defineBddConfig({
+  features: 'e2e/features/*.feature',
+  steps: 'e2e/features/steps/*.ts',
+  outputDir: 'e2e/.features-gen',
+});
 
 export default defineConfig({
   testDir: './e2e',
+  testMatch: ['**/*.spec.ts', '.features-gen/**/*.spec.js'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
