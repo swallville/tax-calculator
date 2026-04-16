@@ -80,6 +80,20 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Font size between text-xs and text-sm — used for form labels, table
+   * rate cells, and the effective-rate pill. Dedicated token because
+   * 0.8125rem (13px) is not on the default Tailwind scale. */
+  --text-label: 0.8125rem;
+
+  /* Card corner radius (20px). Larger than Tailwind's rounded-xl (12px);
+   * reused by the form and results panels for the signature silhouette. */
+  --radius-card: 1.25rem;
+
+  /* Named animation utilities — replace the long arbitrary
+   * `animate-[fade-in-up_0.4s_ease-out_both]` string at call sites. */
+  --animate-fade-in-up: fade-in-up 0.4s ease-out both;
+  --animate-fade-in-down: fade-in-down 0.35s ease-out both;
 }
 
 /*

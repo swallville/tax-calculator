@@ -47,7 +47,7 @@ const BandRow = memo(function BandRow({
       <td className={`${TD_BODY_BASE} first:rounded-l-lg`}>
         {formatCurrency(min)} – {maxLabel}
       </td>
-      <td className="px-4 py-3 font-mono text-[0.8125rem] font-semibold text-text-accent text-right">
+      <td className="px-4 py-3 font-mono text-label font-semibold text-text-accent text-right">
         {formatPercent(rate)}
       </td>
       <td className={`${TD_BODY_BASE} text-right last:rounded-r-lg`}>
@@ -75,7 +75,7 @@ export function TaxBreakdown() {
   return (
     <section
       data-testid="tax-breakdown"
-      className={`${PANEL_CARD} flex-1 min-w-0 flex flex-col gap-5 animate-[fade-in-up_0.4s_ease-out_both]`}
+      className={`${PANEL_CARD} flex-1 min-w-0 flex flex-col gap-5 animate-fade-in-up`}
       aria-labelledby="tax-breakdown-heading"
     >
       <h2
@@ -137,7 +137,7 @@ export function TaxBreakdown() {
         <span className="text-sm font-medium text-text-secondary">
           Effective Rate
         </span>
-        <span className="inline-flex items-center px-3 py-1 rounded-full bg-pill-bg text-pill-text font-mono text-[0.8125rem] font-semibold">
+        <span className="inline-flex items-center px-3 py-1 rounded-full bg-pill-bg text-pill-text font-mono text-label font-semibold">
           {formatPercent(effectiveRate)}
         </span>
       </div>

@@ -11,7 +11,7 @@ export const FIELD_WRAPPER = 'flex flex-col gap-2';
 
 /** Field label above an input/select control. */
 export const FIELD_LABEL =
-  'text-[0.8125rem] font-medium tracking-wide text-text-secondary';
+  'text-label font-medium tracking-wide text-text-secondary';
 
 /** Inline field-level Zod error message rendered below the control. */
 export const FIELD_ERROR = 'text-sm text-status-error';
@@ -24,7 +24,7 @@ export const FIELD_ERROR = 'text-sm text-status-error';
  * re-stating every focus/disabled/border rule.
  */
 export const FIELD_CONTROL_BASE =
-  'w-full bg-bg-input border border-border-input text-text-primary rounded-xl h-13 px-4 focus:outline-none focus:ring-2 focus:ring-ring-focus focus:border-transparent transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed';
+  'w-full bg-bg-input border border-border-input text-text-primary rounded-xl h-13 px-4 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-ring-focus focus:border-transparent transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed';
 
 /**
  * Vertical-centering wrapper for the in-field icons (dollar prefix, chevron
@@ -38,7 +38,7 @@ export const FIELD_ICON_CENTERED =
  * extras (width, flex behaviour, animations) are appended by the caller
  * because they vary per panel.
  */
-export const PANEL_CARD = 'bg-bg-card rounded-[1.25rem] p-6 md:p-8 lg:p-10';
+export const PANEL_CARD = 'bg-bg-card rounded-card p-6 md:p-8 lg:p-10';
 
 /**
  * Even-/odd-row alternation shared by the results table and the loading

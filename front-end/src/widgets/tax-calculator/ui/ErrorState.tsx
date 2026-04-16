@@ -44,7 +44,7 @@ export function ErrorState() {
   return (
     <div
       data-testid="error-state"
-      className="flex flex-col gap-6 py-6 px-4 animate-[fade-in-down_0.35s_ease-out_both]"
+      className="flex flex-col gap-6 py-6 px-4 animate-fade-in-down"
     >
       <div className="bg-bg-error border-l-4 border-status-error rounded-xl p-6 flex items-start gap-4">
         <svg
