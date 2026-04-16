@@ -4,9 +4,7 @@
   /* Background */
   --bg-page: #1a1226;
   --bg-card-form: #241c32;
-  --bg-card-results: #241c32;
   --bg-input: #31264a;
-  --bg-dropdown: #2a2139;
   --bg-highlight-row: #332a48;
   --bg-sub-row: #2d243f;
   --bg-total-row: #3e3258;
@@ -34,9 +32,6 @@
 
   /* Status */
   --status-error: #e85c5c;
-  --status-error-bg: #2e1c24;
-  --status-success: #4ecaa0;
-  --status-info: #60a5fa;
 
   /* Effective Rate Pill */
   --pill-bg: rgba(78, 202, 160, 0.1);
@@ -55,9 +50,7 @@
 @theme inline {
   --color-bg-page: var(--bg-page);
   --color-bg-card: var(--bg-card-form);
-  --color-bg-card-results: var(--bg-card-results);
   --color-bg-input: var(--bg-input);
-  --color-bg-dropdown: var(--bg-dropdown);
   --color-bg-highlight: var(--bg-highlight-row);
   --color-bg-sub: var(--bg-sub-row);
   --color-bg-total: var(--bg-total-row);
@@ -81,9 +74,6 @@
   --color-ring-focus: var(--ring-focus);
 
   --color-status-error: var(--status-error);
-  --color-status-error-bg: var(--status-error-bg);
-  --color-status-success: var(--status-success);
-  --color-status-info: var(--status-info);
 
   --color-pill-bg: var(--pill-bg);
   --color-pill-text: var(--pill-text);
@@ -123,22 +113,6 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/*
- * pulse-soft: available as a gentler alternative to Tailwind's built-in
- * `animate-pulse` (which bottoms out at opacity: 0). This version floors at
- * 0.5, keeping skeleton elements visible enough that low-vision users can
- * still perceive the loading state without full disappearance.
- */
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
   }
 }
 

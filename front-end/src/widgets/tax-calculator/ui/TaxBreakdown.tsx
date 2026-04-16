@@ -5,7 +5,7 @@ import { selectors } from '#/entities/tax-brackets';
 import { formatCurrency, formatPercent } from '#/shared/lib/format';
 import type { BandBreakdown } from '#/shared/lib/tax/types';
 
-import { PANEL_CARD } from './styles';
+import { PANEL_CARD, rowStripe } from './styles';
 
 type BandRowProps = BandBreakdown & { index: number };
 
@@ -14,8 +14,6 @@ type BandRowProps = BandBreakdown & { index: number };
 const TH_BASE =
   'px-4 py-3 text-xs font-semibold uppercase tracking-widest text-text-muted';
 const TD_BODY_BASE = 'px-4 py-3 font-mono text-sm text-text-secondary';
-const ROW_STRIPE = (index: number) =>
-  index % 2 === 0 ? 'bg-bg-highlight' : 'bg-bg-sub';
 
 /**
  * A single tax-bracket row inside the results table.
@@ -40,7 +38,7 @@ const BandRow = memo(function BandRow({
   return (
     <tr
       data-testid={`band-row-${index}`}
-      className={`h-13 ${ROW_STRIPE(index)} hover:bg-bg-row-hover transition-colors duration-150`}
+      className={`h-13 ${rowStripe(index)} hover:bg-bg-row-hover transition-colors duration-150`}
       // animationDelay cannot be expressed as a Tailwind utility without a
       // custom plugin — an inline style is the narrowest exception allowed
       // by project rules when a value is computed at runtime.

@@ -235,13 +235,12 @@ The Tailwind 4 CSS-first configuration file. Imported once in `layout.tsx`.
 ```
 @import "tailwindcss";    <- activates Tailwind v4 engine
 
-:root { ... }             <- raw CSS custom properties (28 tokens)
+:root { ... }             <- raw CSS custom properties
 
 @theme inline { ... }     <- maps :root tokens to Tailwind color/font utilities
 
 @keyframes fade-in-up     <- used by TaxBreakdown entry animation
 @keyframes fade-in-down   <- used by ErrorState entry animation
-@keyframes pulse-soft     <- reserved for custom pulse variants
 
 @media (prefers-reduced-motion: reduce) { ... }
 
@@ -257,18 +256,17 @@ the `@theme inline` block is the single source of truth.
 
 **Background tokens** (`--bg-*` → `bg-bg-*`):
 
-| Token                                  | Hex       | Used by                 |
-| -------------------------------------- | --------- | ----------------------- |
-| `--bg-page`                            | `#1A1226` | Page background         |
-| `--bg-card-form` / `--bg-card-results` | `#241C32` | Widget cards            |
-| `--bg-input`                           | `#31264A` | Input and select fields |
-| `--bg-dropdown`                        | `#2A2139` | Dropdown overlay        |
-| `--bg-highlight-row`                   | `#332A48` | Even band rows          |
-| `--bg-sub-row`                         | `#2D243F` | Odd band rows           |
-| `--bg-total-row`                       | `#3E3258` | Total row               |
-| `--bg-skeleton`                        | `#2D243F` | Loading skeleton base   |
-| `--bg-error`                           | `#2E1C24` | Error card background   |
-| `--bg-row-hover`                       | `#3B3155` | Band row hover          |
+| Token                | Hex       | Used by                 |
+| -------------------- | --------- | ----------------------- |
+| `--bg-page`          | `#1A1226` | Page background         |
+| `--bg-card-form`     | `#241C32` | Widget cards            |
+| `--bg-input`         | `#31264A` | Input and select fields |
+| `--bg-highlight-row` | `#332A48` | Even band rows          |
+| `--bg-sub-row`       | `#2D243F` | Odd band rows           |
+| `--bg-total-row`     | `#3E3258` | Total row               |
+| `--bg-skeleton`      | `#2D243F` | Loading skeleton base   |
+| `--bg-error`         | `#2E1C24` | Error card background   |
+| `--bg-row-hover`     | `#3B3155` | Band row hover          |
 
 **Text tokens** (`--text-*` → `text-text-*`):
 
@@ -290,11 +288,9 @@ the `@theme inline` block is the single source of truth.
 
 **Status tokens**:
 
-| Token              | Hex       | Usage                     |
-| ------------------ | --------- | ------------------------- |
-| `--status-error`   | `#E85C5C` | Error icon, title, border |
-| `--status-success` | `#4ECAA0` | Success indicator         |
-| `--status-info`    | `#60A5FA` | Info indicator            |
+| Token            | Hex       | Usage                     |
+| ---------------- | --------- | ------------------------- |
+| `--status-error` | `#E85C5C` | Error icon, title, border |
 
 **Pill tokens**:
 
@@ -309,7 +305,6 @@ the `@theme inline` block is the single source of truth.
 | -------------- | ----------------------- | ----------------------------------------------------------- |
 | `fade-in-up`   | `translateY(12px)` → 0  | `TaxBreakdown` (`animate-[fade-in-up_0.4s_ease-out_both]`)  |
 | `fade-in-down` | `translateY(-12px)` → 0 | `ErrorState` (`animate-[fade-in-down_0.35s_ease-out_both]`) |
-| `pulse-soft`   | opacity 1 → 0.5 → 1     | Reserved; not currently used                                |
 
 ### Reduced Motion
 

@@ -1,3 +1,5 @@
+import { rowStripe } from './styles';
+
 /**
  * Number of skeleton rows to render, matching the typical federal bracket count
  * for supported tax years (2019-2022). Keeping this in sync with the real
@@ -39,9 +41,7 @@ export function LoadingState() {
         {Array.from({ length: SKELETON_ROW_COUNT }, (_, i) => (
           <div
             key={i}
-            className={`h-13 rounded-lg flex items-center gap-3 px-4 animate-pulse ${
-              i % 2 === 0 ? 'bg-bg-highlight' : 'bg-bg-sub'
-            }`}
+            className={`h-13 rounded-lg flex items-center gap-3 px-4 animate-pulse ${rowStripe(i)}`}
           >
             <div className={`${SKELETON_BAR} w-[45%]`} />
             <div className={`${SKELETON_BAR} w-[20%]`} />

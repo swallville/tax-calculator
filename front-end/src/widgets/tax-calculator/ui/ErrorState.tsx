@@ -82,7 +82,7 @@ export function ErrorState() {
           type="button"
           data-testid="retry-button"
           onClick={retry}
-          className="border border-text-accent text-text-accent bg-transparent px-5 h-12 rounded-xl text-sm font-semibold hover:bg-text-accent/10 active:bg-text-accent/15 focus-visible:ring-2 focus-visible:ring-ring-focus transition-all duration-200 w-fit"
+          className="border border-text-accent text-text-accent bg-transparent px-5 h-12 rounded-xl text-sm font-semibold hover:bg-text-accent/10 active:bg-text-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-card transition-all duration-200 w-fit"
         >
           Try Again
         </button>

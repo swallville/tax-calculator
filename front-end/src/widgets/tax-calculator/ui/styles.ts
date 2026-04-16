@@ -39,3 +39,11 @@ export const FIELD_ICON_CENTERED =
  * because they vary per panel.
  */
 export const PANEL_CARD = 'bg-bg-card rounded-[1.25rem] p-6 md:p-8 lg:p-10';
+
+/**
+ * Even-/odd-row alternation shared by the results table and the loading
+ * skeleton. Keeping the pattern in one place ensures the skeleton's stripes
+ * align with the real rows that replace them, preventing layout shimmer.
+ */
+export const rowStripe = (index: number) =>
+  index % 2 === 0 ? 'bg-bg-highlight' : 'bg-bg-sub';
